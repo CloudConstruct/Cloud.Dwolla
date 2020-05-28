@@ -8,8 +8,8 @@ namespace Dwolla.Client.Models.Responses
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
-        public string Type { get; set; }
-        public string Status { get; set; }
+        public CustomerType Type { get; set; }
+        public CustomerStatus Status { get; set; }
         public DateTime Created { get; set; }
         public string Address1 { get; set; }
         public string Address2 { get; set; }

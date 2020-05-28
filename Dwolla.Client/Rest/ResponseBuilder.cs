@@ -38,9 +38,9 @@ namespace Dwolla.Client.Rest
         }
 
         public RestResponse<T> Error<T>(HttpResponseMessage response, string code, string message, string rawContent) =>
-            Error<T>(response, new ErrorResponse {Code = code, Message = message}, rawContent);
+            Error<T>(response, new ErrorResponse { Code = code, Message = message }, rawContent);
 
         private static RestResponse<T> Error<T>(HttpResponseMessage response, ErrorResponse error, string rawContent) =>
-            new RestResponse<T>(response, default(T), rawContent, error);
+            new RestResponse<T>(response, default, rawContent, error);
     }
 }
