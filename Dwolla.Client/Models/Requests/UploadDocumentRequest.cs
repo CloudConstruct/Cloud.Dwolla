@@ -2,7 +2,7 @@
 {
     public class UploadDocumentRequest
     {
-        public string DocumentType { get; set; }
+        public DocumentType DocumentType { get; set; }
         public File Document { get; set; }
     }
 }

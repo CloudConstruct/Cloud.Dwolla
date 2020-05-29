@@ -20,14 +20,14 @@ namespace Dwolla.Client
 {
     public interface IDwollaClient
     {
-        string ApiBaseAddress { get; }
-        string AuthBaseAddress { get; }
+        //string ApiBaseAddress { get; }
+        //string AuthBaseAddress { get; }
 
-        Task<RestResponse<TRes>> PostAuthAsync<TRes>(Uri uri, AppTokenRequest content) where TRes : IDwollaResponse;
-        Task<RestResponse<TRes>> GetAsync<TRes>(Uri uri, Headers headers) where TRes : IDwollaResponse;
-        Task<RestResponse<TRes>> PostAsync<TReq, TRes>(Uri uri, TReq content, Headers headers) where TRes : IDwollaResponse;
-        Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(Uri uri, TReq content, Headers headers);
-        Task<RestResponse<EmptyResponse>> UploadAsync(Uri uri, UploadDocumentRequest content, Headers headers);
+        Task<RestResponse<TRes>> PostAuthAsync<TRes>(string uri, AppTokenRequest content) where TRes : IDwollaResponse;
+        Task<RestResponse<TRes>> GetAsync<TRes>(string uri, Headers headers) where TRes : IDwollaResponse;
+        Task<RestResponse<TRes>> PostAsync<TReq, TRes>(string uri, TReq content, Headers headers) where TRes : IDwollaResponse;
+        Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(string uri, TReq content, Headers headers);
+        Task<RestResponse<EmptyResponse>> UploadAsync(string uri, UploadDocumentRequest content, Headers headers);
     }
 
     public class DwollaClient : IDwollaClient
@@ -45,60 +45,70 @@ namespace Dwolla.Client
 
         private readonly IRestClient _client;
 
+        public DwollaClient(HttpClient httpClient)
+        {
+            _client = new RestClient(CreateOrUpdateHttpClient(httpClient));
+        }
+
         public static DwollaClient Create(bool isSandbox) =>
-            new DwollaClient(new RestClient(CreateHttpClient()), isSandbox);
+            new DwollaClient(new RestClient(CreateOrUpdateHttpClient()), isSandbox);
 
         public async Task<RestResponse<TRes>> PostAuthAsync<TRes>(
-            Uri uri, AppTokenRequest content) where TRes : IDwollaResponse =>
-            await SendAsync<TRes>(new HttpRequestMessage(HttpMethod.Post, uri)
+            string uri, AppTokenRequest content) where TRes : IDwollaResponse
+        {
+            var formContentDict = new Dictionary<string, string> { { "grant_type", content.GrantType } };
+            if (!string.IsNullOrEmpty(content.Key) && !string.IsNullOrEmpty(content.Secret))
             {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    {"client_id", content.Key}, {"client_secret", content.Secret}, {"grant_type", content.GrantType}
-                })
+                formContentDict.Add("client_id", content.Key);
+                formContentDict.Add("client_secret", content.Secret);
+            }
+            return await SendAsync<TRes>(new HttpRequestMessage(HttpMethod.Post, uri)
+            {
+                Content = new FormUrlEncodedContent(formContentDict)
             });
+        }
 
         public async Task<RestResponse<TRes>> GetAsync<TRes>(
-            Uri uri, Headers headers) where TRes : IDwollaResponse =>
+            string uri, Headers headers) where TRes : IDwollaResponse =>
             await SendAsync<TRes>(CreateRequest(HttpMethod.Get, uri, headers));
 
         public async Task<RestResponse<TRes>> PostAsync<TReq, TRes>(
-            Uri uri, TReq content, Headers headers) where TRes : IDwollaResponse =>
+            string uri, TReq content, Headers headers) where TRes : IDwollaResponse =>
             await SendAsync<TRes>(CreatePostRequest(uri, content, headers));
 
         public async Task<RestResponse<EmptyResponse>> UploadAsync(
-            Uri uri, UploadDocumentRequest content, Headers headers) =>
+            string uri, UploadDocumentRequest content, Headers headers) =>
             await SendAsync<EmptyResponse>(CreateUploadRequest(uri, content, headers));
 
-        public async Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(Uri uri, TReq content, Headers headers) =>
+        public async Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(string uri, TReq content, Headers headers) =>
             await SendAsync<EmptyResponse>(CreateDeleteRequest(uri, content, headers));
 
         private async Task<RestResponse<TRes>> SendAsync<TRes>(HttpRequestMessage request) =>
             await _client.SendAsync<TRes>(request);
 
         private static HttpRequestMessage CreateDeleteRequest<TReq>(
-            Uri requestUri, TReq content, Headers headers, string contentType = ContentType) =>
+            string requestUri, TReq content, Headers headers, string contentType = ContentType) =>
             CreateContentRequest(HttpMethod.Delete, requestUri, headers, content, contentType);
 
         private static HttpRequestMessage CreatePostRequest<TReq>(
-            Uri requestUri, TReq content, Headers headers, string contentType = ContentType) =>
+            string requestUri, TReq content, Headers headers, string contentType = ContentType) =>
             CreateContentRequest(HttpMethod.Post, requestUri, headers, content, contentType);
 
         private static HttpRequestMessage CreateContentRequest<TReq>(
-            HttpMethod method, Uri requestUri, Headers headers, TReq content, string contentType)
+            HttpMethod method, string requestUri, Headers headers, TReq content, string contentType)
         {
             var r = CreateRequest(method, requestUri, headers);
             r.Content = new StringContent(JsonConvert.SerializeObject(content, JsonSettings), Encoding.UTF8, contentType);
             return r;
         }
 
-        private static HttpRequestMessage CreateUploadRequest(Uri requestUri, UploadDocumentRequest content,
+        private static HttpRequestMessage CreateUploadRequest(string requestUri, UploadDocumentRequest content,
             Headers headers)
         {
             var r = CreateRequest(HttpMethod.Post, requestUri, headers);
             r.Content = new MultipartFormDataContent("----------Upload")
             {
-                {new StringContent(content.DocumentType), "\"documentType\""},
+                {new StringContent(content.DocumentType.ToString()), "\"documentType\""},
                 GetFileContent(content.Document)
             };
             return r;
@@ -116,7 +126,7 @@ namespace Dwolla.Client
             return fc;
         }
 
-        private static HttpRequestMessage CreateRequest(HttpMethod method, Uri requestUri, Headers headers)
+        private static HttpRequestMessage CreateRequest(HttpMethod method, string requestUri, Headers headers)
         {
             var r = new HttpRequestMessage(method, requestUri);
             r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ContentType));
@@ -127,16 +137,16 @@ namespace Dwolla.Client
         internal DwollaClient(IRestClient client, bool isSandbox)
         {
             _client = client;
-            ApiBaseAddress = isSandbox ? "https://api-sandbox.dwolla.com" : "https://api.dwolla.com";
-            AuthBaseAddress = isSandbox ? "https://accounts-sandbox.dwolla.com" : "https://accounts.dwolla.com";
+            //ApiBaseAddress = isSandbox ? "https://api-sandbox.dwolla.com" : "https://api.dwolla.com";
+            //AuthBaseAddress = isSandbox ? "https://accounts-sandbox.dwolla.com" : "https://accounts.dwolla.com";
         }
 
         private static readonly string ClientVersion = typeof(DwollaClient).GetTypeInfo().Assembly
             .GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
 
-        internal static HttpClient CreateHttpClient()
+        internal static HttpClient CreateOrUpdateHttpClient(HttpClient client = null)
         {
-            var client = new HttpClient(new HttpClientHandler {SslProtocols = SslProtocols.Tls12});
+            client = client ?? new HttpClient(new HttpClientHandler { SslProtocols = SslProtocols.Tls12 });
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("dwolla-v2-csharp", ClientVersion));
             return client;
         }

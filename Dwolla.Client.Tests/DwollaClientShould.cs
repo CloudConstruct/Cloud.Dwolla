@@ -1,9 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Web;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
@@ -20,11 +22,11 @@ namespace Dwolla.Client.Tests
         private const string JsonV1 = "application/vnd.dwolla.v1.hal+json";
         private const string RequestId = "some-id";
         private const string UserAgent = "dwolla-v2-csharp/5.1.1";
-        private static readonly Uri RequestUri = new Uri("https://api-sandbox.dwolla.com/foo");
-        private static readonly Uri AuthRequestUri = new Uri("https://accounts-sandbox.dwolla.com/foo");
-        private static readonly Headers Headers = new Headers {{"key1", "value1"}, {"key2", "value2"}};
-        private static readonly TestRequest Request = new TestRequest {Message = "requestTest"};
-        private static readonly TestResponse Response = new TestResponse {Message = "responseTest"};
+        private static readonly string RequestUri = "https://api-sandbox.dwolla.com/foo";
+        private static readonly string AuthRequestUri = "https://accounts-sandbox.dwolla.com/foo";
+        private static readonly Headers Headers = new Headers { { "key1", "value1" }, { "key2", "value2" } };
+        private static readonly TestRequest Request = new TestRequest { Message = "requestTest" };
+        private static readonly TestResponse Response = new TestResponse { Message = "responseTest" };
 
         private readonly Mock<IRestClient> _restClient;
         private readonly DwollaClient _client;
@@ -38,7 +40,7 @@ namespace Dwolla.Client.Tests
         [Fact]
         public void ConfigureHttpClient()
         {
-            var client = DwollaClient.CreateHttpClient();
+            var client = DwollaClient.CreateOrUpdateHttpClient();
             Assert.Equal(UserAgent, client.DefaultRequestHeaders.UserAgent.ToString());
         }
 
@@ -46,7 +48,7 @@ namespace Dwolla.Client.Tests
         public async void CreatePostAuthRequestAndPassToClient()
         {
             var response = CreateRestResponse(HttpMethod.Post, Response);
-            var req = new AppTokenRequest {Key = "key", Secret = "secret"};
+            var req = new AppTokenRequest { Key = "key", Secret = "secret" };
             var request = CreateAuthHttpRequest(req);
             _restClient.Setup(x => x.SendAsync<TestResponse>(It.IsAny<HttpRequestMessage>()))
                 .Callback<HttpRequestMessage>(y => AppTokenCallback(request, y)).ReturnsAsync(response);
@@ -105,7 +107,7 @@ namespace Dwolla.Client.Tests
 
         private static UploadDocumentRequest CreateUploadRequest() => new UploadDocumentRequest
         {
-            DocumentType = "idCard",
+            DocumentType = DocumentType.IdCard,
             Document = new File
             {
                 ContentType = "image/png",
@@ -119,7 +121,7 @@ namespace Dwolla.Client.Tests
             var r = CreateRequest(HttpMethod.Post);
             r.Content = new MultipartFormDataContent("----------Upload")
             {
-                {new StringContent(request.DocumentType), "\"documentType\""},
+                {new StringContent(request.DocumentType.ToString()), "\"documentType\""},
                 GetFileContent(request.Document)
             };
             return r;
@@ -150,7 +152,7 @@ namespace Dwolla.Client.Tests
         {
             var r = new HttpResponseMessage
             {
-                RequestMessage = new HttpRequestMessage {RequestUri = RequestUri, Method = method}
+                RequestMessage = new HttpRequestMessage { RequestUri = new Uri(RequestUri), Method = method }
             };
             r.Headers.Add("x-request-id", RequestId);
             return new RestResponse<T>(r, content, rawContent);
@@ -215,7 +217,11 @@ namespace Dwolla.Client.Tests
         {
             Assert.Equal(expected.Method, actual.Method);
             Assert.Equal(expected.RequestUri, actual.RequestUri);
-            Assert.Equal("client_id=key&client_secret=secret&grant_type=client_credentials", await actual.Content.ReadAsStringAsync());
+            Assert.Equal(
+                new Dictionary<string, string> { { "client_id", "key" }, { "client_secret", "secret" }, { "grant_type", "client_credentials" } },
+                (await actual.Content.ReadAsStringAsync())
+                    .Split("&")
+                    .ToDictionary(kvp => kvp.Split("=")[0], kvp => kvp.Split("=")[1]));
             Assert.Equal("application/x-www-form-urlencoded", actual.Content.Headers.ContentType.ToString());
         }
 
