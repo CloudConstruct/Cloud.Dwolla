@@ -13,6 +13,6 @@ namespace Dwolla.Client.Models.Responses
     public abstract class BaseResponse : IDwollaResponse
     {
         [JsonProperty(PropertyName = "_links")]
-        public Dictionary<string, Link> Links { get; set; }
+        public LinkDictionary Links { get; set; }
     }
 }
