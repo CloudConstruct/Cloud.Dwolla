@@ -18,11 +18,8 @@ using Newtonsoft.Json.Serialization;
 
 namespace Dwolla.Client
 {
-    public interface IDwollaClient
+    interface IDwollaClient
     {
-        //string ApiBaseAddress { get; }
-        //string AuthBaseAddress { get; }
-
         Task<RestResponse<TRes>> PostAuthAsync<TRes>(string uri, AppTokenRequest content) where TRes : IDwollaResponse;
         Task<RestResponse<TRes>> GetAsync<TRes>(string uri, Headers headers) where TRes : IDwollaResponse;
         Task<RestResponse<TRes>> PostAsync<TReq, TRes>(string uri, TReq content, Headers headers) where TRes : IDwollaResponse;
@@ -30,7 +27,7 @@ namespace Dwolla.Client
         Task<RestResponse<EmptyResponse>> UploadAsync(string uri, UploadDocumentRequest content, Headers headers);
     }
 
-    public class DwollaClient : IDwollaClient
+    internal class DwollaClient : IDwollaClient
     {
         public const string ContentType = "application/vnd.dwolla.v1.hal+json";
         public string ApiBaseAddress { get; }
