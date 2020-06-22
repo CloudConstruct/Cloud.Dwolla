@@ -59,10 +59,13 @@ namespace Dwolla.Client
                 formContentDict.Add("client_id", content.Key);
                 formContentDict.Add("client_secret", content.Secret);
             }
-            return await SendAsync<TRes>(new HttpRequestMessage(HttpMethod.Post, uri)
+            var request = new HttpRequestMessage(HttpMethod.Post, uri)
             {
                 Content = new FormUrlEncodedContent(formContentDict)
-            });
+            };
+            // Not adding this accept will result in a 401. For some reason.
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return await SendAsync<TRes>(request);
         }
 
         public async Task<RestResponse<TRes>> GetAsync<TRes>(
