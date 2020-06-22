@@ -80,6 +80,20 @@ namespace Dwolla.Client
             return response.Content;
         }
 
+        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body)
+            where TResponse : IDwollaResponse
+        {
+            var response = await dwollaClient.PostAsync<TRequest, TResponse>(
+                url, body, new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+
+            if (response.Error != null)
+            {
+                throw new DwollaException(response.Error);
+            }
+
+            return response.Content;
+        }
+
         private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content)
         {
             var response = await dwollaClient.UploadAsync(
@@ -95,6 +109,7 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
+
         public Task<Customer> GetCustomerAsync(Guid customerId)
             => GetAsync<Customer>($"/customers/{customerId}");
 
@@ -108,12 +123,15 @@ namespace Dwolla.Client
             => GetAsync<DocumentResponse>($"/documents/{documentId}");
 
         public Task<FundingSource> GetFundingSourceAsync(Guid fundingSourceId)
-            => GetAsync<FundingSource>($"funding-sources/{fundingSourceId}");
+            => GetAsync<FundingSource>($"/funding-sources/{fundingSourceId}");
 
         public Task<BalanceResponse> GetFundingSourceBalanceAsync(Guid fundingSourceId)
-            => GetAsync<BalanceResponse>($"funding-sources/{fundingSourceId}/balance");
+            => GetAsync<BalanceResponse>($"/funding-sources/{fundingSourceId}/balance");
 
         public Task<TransferResponse> GetTransferAsync(Guid transferId)
             => GetAsync<TransferResponse>($"/transfers/{transferId}");
+
+        public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
+            => PostAsync<UpdateCustomerRequest, Customer>($"/customer/{customerId}", customerRequest);
     }
 }

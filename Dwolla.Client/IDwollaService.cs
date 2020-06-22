@@ -9,6 +9,8 @@ namespace Dwolla.Client
     public interface IDwollaService
     {
         Task<Customer> GetCustomerAsync(Guid customerId);
+        Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customersRequest);
+
         Task<GetDocumentsResponse> GetCustomerDocumentsAsync(Guid customerId);
 
         Task<DocumentResponse> GetDocumentAsync(Guid documentId);
