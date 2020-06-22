@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Dwolla.Client;
+using Polly;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -25,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddHttpClient<IDwollaClient, DwollaClient>((sp, client) =>
                 {
                     client.BaseAddress = new Uri(dwollaApiUrl(sp));
-                    client.DefaultRequestHeaders.Add("Accept", "application/vnd.dwolla.v1.hal+json");
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.dwolla.v1.hal+json"));
                 });
 
             return services;

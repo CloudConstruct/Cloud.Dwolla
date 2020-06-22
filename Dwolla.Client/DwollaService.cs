@@ -1,8 +1,13 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
+using Dwolla.Client.Rest;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dwolla.Client
@@ -40,7 +45,7 @@ namespace Dwolla.Client
                 token = await initializeToken(serviceProvider);
             }
 
-            if (force || token == null || token.Expiration <= DateTimeOffset.UtcNow)
+            if (force || token?.AccessToken == null || token.Expiration <= DateTimeOffset.UtcNow)
             {
                 var tokenResponse = await dwollaClient.PostAuthAsync<TokenResponse>(
                     "/token",
@@ -54,6 +59,20 @@ namespace Dwolla.Client
                 {
                     throw new DwollaException(tokenResponse.Error);
                 }
+
+                DateTimeOffset responseDate = DateTimeOffset.UtcNow;
+                // Try to get response header
+                if (tokenResponse.Response.Headers.TryGetValues("Date", out IEnumerable<string> values) && values.Count() > 0)
+                {
+                    responseDate = DateTimeOffset.Parse(values.First());
+                }
+
+                // Save token in memory
+                token = new DwollaToken
+                {
+                    AccessToken = tokenResponse.Content.Token,
+                    Expiration = responseDate.AddSeconds(tokenResponse.Content.RefreshExpiresIn)
+                };
 
                 // Save the token to DB if we can
                 if (saveToken != null)
