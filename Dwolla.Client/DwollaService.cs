@@ -84,36 +84,46 @@ namespace Dwolla.Client
             return token.AccessToken;
         }
 
-        private async Task<TResponse> GetAsync<TResponse>(string url)
+        private async Task<TResponse> GetAsync<TResponse>(string url, bool forceTokenRefresh = false)
             where TResponse : IDwollaResponse
         {
             var response = await dwollaClient.GetAsync<TResponse>(
                 url,
-                new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+                new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
 
             if (response.Error != null)
             {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await GetAsync<TResponse>(url, true);
+                }
                 throw new DwollaException(response.Error);
             }
 
             return response.Content;
         }
 
-        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body)
+        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body, bool forceTokenRefresh = false)
             where TResponse : IDwollaResponse
         {
             var response = await dwollaClient.PostAsync<TRequest, TResponse>(
-                url, body, new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+                url, body, new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
 
             if (response.Error != null)
             {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await PostAsync<TRequest, TResponse>(url, body, true);
+                }
                 throw new DwollaException(response.Error);
             }
 
             return response.Content;
         }
 
-        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content)
+        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false)
         {
             var response = await dwollaClient.UploadAsync(
                 url,
@@ -122,6 +132,11 @@ namespace Dwolla.Client
 
             if (response.Error != null)
             {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await UploadAsync(url, content, true);
+                }
                 throw new DwollaException(response.Error);
             }
 
