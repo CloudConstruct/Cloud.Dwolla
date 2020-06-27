@@ -9,7 +9,7 @@ namespace Dwolla.Client.Models.Requests
         public string Email { get; set; }
         public string Type { get; set; }
         public string IpAddress { get; set; }
-        public string Status { get; set; }
+        public UpdateCustomerStatus? Status { get; set; }
         public string Address1 { get; set; }
         public string Address2 { get; set; }
         public string City { get; set; }

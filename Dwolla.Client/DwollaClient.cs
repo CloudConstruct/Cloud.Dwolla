@@ -18,11 +18,8 @@ using Newtonsoft.Json.Serialization;
 
 namespace Dwolla.Client
 {
-    public interface IDwollaClient
+    interface IDwollaClient
     {
-        //string ApiBaseAddress { get; }
-        //string AuthBaseAddress { get; }
-
         Task<RestResponse<TRes>> PostAuthAsync<TRes>(string uri, AppTokenRequest content) where TRes : IDwollaResponse;
         Task<RestResponse<TRes>> GetAsync<TRes>(string uri, Headers headers) where TRes : IDwollaResponse;
         Task<RestResponse<TRes>> PostAsync<TReq, TRes>(string uri, TReq content, Headers headers) where TRes : IDwollaResponse;
@@ -30,7 +27,7 @@ namespace Dwolla.Client
         Task<RestResponse<EmptyResponse>> UploadAsync(string uri, UploadDocumentRequest content, Headers headers);
     }
 
-    public class DwollaClient : IDwollaClient
+    internal class DwollaClient : IDwollaClient
     {
         public const string ContentType = "application/vnd.dwolla.v1.hal+json";
         public string ApiBaseAddress { get; }
@@ -62,10 +59,13 @@ namespace Dwolla.Client
                 formContentDict.Add("client_id", content.Key);
                 formContentDict.Add("client_secret", content.Secret);
             }
-            return await SendAsync<TRes>(new HttpRequestMessage(HttpMethod.Post, uri)
+            var request = new HttpRequestMessage(HttpMethod.Post, uri)
             {
                 Content = new FormUrlEncodedContent(formContentDict)
-            });
+            };
+            // Not adding this accept will result in a 401. For some reason.
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return await SendAsync<TRes>(request);
         }
 
         public async Task<RestResponse<TRes>> GetAsync<TRes>(

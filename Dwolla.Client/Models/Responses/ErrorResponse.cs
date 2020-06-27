@@ -3,11 +3,8 @@ using Newtonsoft.Json;
 
 namespace Dwolla.Client.Models.Responses
 {
-    public class ErrorResponse : IDwollaResponse
+    public class ErrorResponse : Error, IDwollaResponse
     {
-        public string Code { get; set; }
-        public string Message { get; set; }
-
         [JsonProperty(PropertyName = "_embedded")]
         public ErrorEmbed Embedded { get; set; }
     }
