@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
-using Dwolla.Client.Rest;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dwolla.Client
@@ -166,6 +163,6 @@ namespace Dwolla.Client
             => GetAsync<TransferResponse>($"/transfers/{transferId}");
 
         public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
-            => PostAsync<UpdateCustomerRequest, Customer>($"/customer/{customerId}", customerRequest);
+            => PostAsync<UpdateCustomerRequest, Customer>($"/customers/{customerId}", customerRequest);
     }
 }
