@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Web;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;

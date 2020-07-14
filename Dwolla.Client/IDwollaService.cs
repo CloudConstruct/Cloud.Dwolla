@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
