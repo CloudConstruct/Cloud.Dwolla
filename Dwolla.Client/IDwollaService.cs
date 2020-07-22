@@ -10,6 +10,8 @@ namespace Dwolla.Client
         Task<Customer> GetCustomerAsync(Guid customerId);
         Task<Uri> CreateCustomerAsync(CreateCustomerRequest customerRequest);
         Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customersRequest);
+        Task<BeneficialOwnerResponse> AddBeneficialOwner(Guid customerId, CreateBeneficialOwnerRequest createBeneficialOwnerRequest);
+        Task<BeneficialOwnershipResponse> CertifyBeneficialOwner(Guid customerId, CertifyBeneficialOwnershipRequest certifyBeneficialOwnershipRequest);
 
         Task<GetDocumentsResponse> GetCustomerDocumentsAsync(Guid customerId);
 
