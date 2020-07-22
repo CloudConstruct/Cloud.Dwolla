@@ -120,6 +120,24 @@ namespace Dwolla.Client
             return response.Content;
         }
 
+        private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, bool forceTokenRefresh = false)
+        {
+            var response = await dwollaClient.PostAsync<TRequest, EmptyResponse>(url, body,
+                new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+
+            if (response.Error != null)
+            {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await PostAsync(url, body, true);
+                }
+                throw new DwollaException(response.Error);
+            }
+
+            return response.Response.Headers.Location;
+        }
+
         private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false)
         {
             var response = await dwollaClient.UploadAsync(
@@ -144,6 +162,9 @@ namespace Dwolla.Client
         public Task<Customer> GetCustomerAsync(Guid customerId)
             => GetAsync<Customer>($"/customers/{customerId}");
 
+        public Task<Uri> CreateCustomerAsync(CreateCustomerRequest customerRequest)
+            => PostAsync("/customers", customerRequest);
+
         public Task<GetDocumentsResponse> GetCustomerDocumentsAsync(Guid customerId)
             => GetAsync<GetDocumentsResponse>($"/customers/{customerId}/documents");
 
@@ -164,5 +185,6 @@ namespace Dwolla.Client
 
         public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
             => PostAsync<UpdateCustomerRequest, Customer>($"/customers/{customerId}", customerRequest);
+
     }
 }

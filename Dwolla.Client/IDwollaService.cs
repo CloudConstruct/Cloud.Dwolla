@@ -8,6 +8,7 @@ namespace Dwolla.Client
     public interface IDwollaService
     {
         Task<Customer> GetCustomerAsync(Guid customerId);
+        Task<Uri> CreateCustomerAsync(CreateCustomerRequest customerRequest);
         Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customersRequest);
 
         Task<GetDocumentsResponse> GetCustomerDocumentsAsync(Guid customerId);
