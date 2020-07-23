@@ -68,7 +68,7 @@ namespace Dwolla.Client
                 token = new DwollaToken
                 {
                     AccessToken = tokenResponse.Content.Token,
-                    Expiration = responseDate.AddSeconds(tokenResponse.Content.RefreshExpiresIn)
+                    Expiration = responseDate.AddSeconds(tokenResponse.Content.ExpiresIn)
                 };
 
                 // Save the token to DB if we can
