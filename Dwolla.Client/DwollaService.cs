@@ -186,9 +186,10 @@ namespace Dwolla.Client
         public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
             => PostAsync<UpdateCustomerRequest, Customer>($"/customers/{customerId}", customerRequest);
 
-        public Task<BeneficialOwnerResponse> AddBeneficialOwner(Guid customerId, CreateBeneficialOwnerRequest createBeneficialOwnerRequest)
+        public Task<BeneficialOwnerResponse> CreateBeneficialOwnerAsync(Guid customerId, CreateBeneficialOwnerRequest createBeneficialOwnerRequest)
             => PostAsync<CreateBeneficialOwnerRequest, BeneficialOwnerResponse>($"/customers/{customerId}/beneficial-owners", createBeneficialOwnerRequest);
-        public Task<BeneficialOwnershipResponse> CertifyBeneficialOwner(Guid customerId, CertifyBeneficialOwnershipRequest certifyBeneficialOwnershipRequest)
+
+        public Task<BeneficialOwnershipResponse> CertifyBeneficialOwnershipAsync(Guid customerId, CertifyBeneficialOwnershipRequest certifyBeneficialOwnershipRequest)
             => PostAsync<CertifyBeneficialOwnershipRequest, BeneficialOwnershipResponse>($"/customers/{customerId}/beneficial-ownership", certifyBeneficialOwnershipRequest);
     }
 }
