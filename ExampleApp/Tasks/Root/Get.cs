@@ -7,7 +7,7 @@ namespace ExampleApp.Tasks.Root
     {
         public override async Task Run()
         {
-            var res = await Broker.GetRootAsync();
+            var res = await Service.GetRootAsync();
             foreach (var kvp in res.Links) WriteLine($"{kvp.Key}: {kvp.Value.Href}");
         }
     }

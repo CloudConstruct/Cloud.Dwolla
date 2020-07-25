@@ -14,18 +14,17 @@ namespace ExampleApp.Tasks.Documents
         public override async Task Run()
         {
             Write("Customer ID for whom to upload a document: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
 
             using (var fileStream = typeof(Create).GetTypeInfo().Assembly
                 .GetManifestResourceStream($"ExampleApp.{FilenameSuccess}"))
             {
-                var uri = await Broker.UploadDocumentAsync(
-                    new Uri($"{rootRes.Links["customers"].Href}/{input}/documents"),
+                var uri = await Service.UploadDocumentAsync(
+                    input,
                     new UploadDocumentRequest
                     {
-                        DocumentType = "idCard",
+                        DocumentType = DocumentType.IdCard,
                         Document = new File
                         {
                             ContentType = "image/png",

@@ -9,7 +9,7 @@ namespace ExampleApp.Tasks.MicroDeposits
         public override async Task Run()
         {
             Write("Funding Source ID for which to verify the micro-deposits: ");
-            var fundingSource = ReadLine();
+            var fundingSource = ReadLineAsGuid();
 
             Write("First micro-deposit amount: ");
             var amount1 = decimal.Parse(ReadLine());
@@ -17,7 +17,7 @@ namespace ExampleApp.Tasks.MicroDeposits
             Write("Second micro-deposit amount: ");
             var amount2 = decimal.Parse(ReadLine());
 
-            var uri = await Broker.VerifyMicroDepositsAsync(fundingSource, amount1, amount2);
+            var uri = await Service.VerifyMicroDepositsAsync(fundingSource, amount1, amount2);
 
             if (uri == null) return;
 

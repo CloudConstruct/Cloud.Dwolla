@@ -9,11 +9,9 @@ namespace ExampleApp.Tasks.BeneficialOwners
         public override async Task Run()
         {
             Write("Customer ID for whom to get the status: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var statusRes = await Broker.GetBeneficialOwnershipAsync(
-                new Uri($"{rootRes.Links["customers"].Href}/{input}/beneficial-ownership"));
+            var statusRes = await Service.GetBeneficialOwnershipAsync(input);
 
             WriteLine($"Status={statusRes.Status}");
         }

@@ -7,8 +7,7 @@ namespace ExampleApp.Tasks.Events
     {
         public override async Task Run()
         {
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.GetEventsAsync(rootRes.Links["events"].Href);
+            var res = await Service.GetEventsAsync();
             res.Embedded.Events
                 .ForEach(ev => WriteLine($" - {ev.Id}: {ev.Topic} {ev.ResourceId}"));
         }

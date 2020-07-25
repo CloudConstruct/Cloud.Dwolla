@@ -10,11 +10,9 @@ namespace ExampleApp.Tasks.BeneficialOwners
         public override async Task Run()
         {
             Write("Customer ID for whom to list the beneficial owners: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var listRes = await Broker.GetBeneficialOwnersAsync(
-                new Uri($"{rootRes.Links["customers"].Href}/{input}/beneficial-owners"));
+            var listRes = await Service.GetBeneficialOwnersAsync(input);
 
             WriteLine($"{listRes.Embedded.BeneficialOwners.Count()} beneficial owners retrieved:");
 

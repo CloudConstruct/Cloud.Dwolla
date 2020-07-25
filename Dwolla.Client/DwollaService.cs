@@ -1,45 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Dwolla.Client
 {
-    class DwollaService : IDwollaService
+    public class DwollaService : IDwollaService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IDwollaClient dwollaClient;
+
+        private readonly DwollaClient dwollaClient;
+
         private readonly string clientId;
         private readonly string clientSecret;
-        private readonly Func<IServiceProvider, Task<DwollaToken>> initializeToken;
+        private readonly Func<IServiceProvider, Task<DwollaToken>> fetchToken;
+
         private readonly Func<IServiceProvider, DwollaToken, Task> saveToken;
 
         private DwollaToken token;
 
+        public DwollaService(DwollaCredentials dwollaCredentials, Uri apiBaseUrl)
+        {
+            var httpClient = HttpClientFactory.Create();
+            httpClient.BaseAddress = apiBaseUrl;
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.ContentType));
+            dwollaClient = new DwollaClient(httpClient);
+
+            clientId = dwollaCredentials.ClientId;
+            clientSecret = dwollaCredentials.ClientSecret;
+        }
+
         internal DwollaService(
-            IServiceProvider serviceProvider,
-            IDwollaClient dwollaClient,
+            DwollaClient dwollaClient,
             DwollaCredentials dwollaCredentials,
-            Func<IServiceProvider, Task<DwollaToken>> initializeToken,
-            Func<IServiceProvider, DwollaToken, Task> saveToken)
+            IServiceProvider serviceProvider = null,
+            Func<IServiceProvider, Task<DwollaToken>> fetchToken = null,
+            Func<IServiceProvider, DwollaToken, Task> saveToken = null)
         {
             this.serviceProvider = serviceProvider;
             this.dwollaClient = dwollaClient;
-            this.initializeToken = initializeToken;
+            this.fetchToken = fetchToken;
             this.saveToken = saveToken;
             clientId = dwollaCredentials.ClientId;
             clientSecret = dwollaCredentials.ClientSecret;
         }
 
+        #region Private
+
         private async Task<string> GetTokenAsync(bool force = false)
         {
-            if (token == null && initializeToken != null)
+            if (token == null && fetchToken != null)
             {
-                token = await initializeToken(serviceProvider);
+                token = await fetchToken(serviceProvider);
             }
 
             if (force || token?.AccessToken == null || token.Expiration <= DateTimeOffset.UtcNow)
@@ -158,6 +175,52 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
+        private async Task<TResponse> DeleteAsync<TResponse>(string url, bool forceTokenRefresh = false)
+        {
+            var response = await dwollaClient.DeleteAsync<TResponse>(url,
+                new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+
+            if (response.Error != null)
+            {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await DeleteAsync<TResponse>(url, true);
+                }
+                throw new DwollaException(response.Error);
+            }
+
+            return response.Content;
+        }
+
+        #endregion
+
+        public Task<GetEventsResponse> GetEventsAsync()
+            => throw new NotImplementedException();
+
+        public Task<GetBusinessClassificationsResponse> GetBusinessClassificationsAsync()
+            => throw new NotImplementedException();
+
+        #region Webhooks
+
+        public Task<Uri> CreateWebhookSubscriptionAsync(string url, string secret)
+            => PostAsync("/webhook-subscriptions", new CreateWebhookSubscriptionRequest { Url = url, Secret = secret });
+
+        public Task<WebhookSubscription> GetWebhookSubscriptionAsync(Guid webhookSubscriptionId)
+            => GetAsync<WebhookSubscription>($"/webhook-subscriptions/{webhookSubscriptionId}");
+
+        public Task<GetWebhookSubscriptionsResponse> GetWebhookSubscriptionsAsync()
+            => GetAsync<GetWebhookSubscriptionsResponse>("/webhook-subscriptions");
+
+        public Task<WebhookSubscription> DeleteWebhookSubscriptionAsync(Guid webhookSubscriptionId)
+            => DeleteAsync<WebhookSubscription>($"/webhook-subscriptions/{webhookSubscriptionId}");
+
+        #endregion
+
+        #region Customers
+
+        public Task<GetCustomersResponse> GetCustomersAsync()
+            => GetAsync<GetCustomersResponse>("/customers");
 
         public Task<Customer> GetCustomerAsync(Guid customerId)
             => GetAsync<Customer>($"/customers/{customerId}");
@@ -168,11 +231,43 @@ namespace Dwolla.Client
         public Task<GetDocumentsResponse> GetCustomerDocumentsAsync(Guid customerId)
             => GetAsync<GetDocumentsResponse>($"/customers/{customerId}/documents");
 
-        public Task<Uri> UploadCustomerDocumentAsync(Guid customerId, UploadDocumentRequest document)
+        public Task<Uri> UploadDocumentAsync(Guid customerId, UploadDocumentRequest document)
             => UploadAsync($"/customers/{customerId}/documents", document);
+
+        public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
+            => PostAsync<UpdateCustomerRequest, Customer>($"/customers/{customerId}", customerRequest);
+
+        public Task<Uri> CreateBeneficialOwnerAsync(Guid customerId, CreateBeneficialOwnerRequest createBeneficialOwnerRequest)
+            => PostAsync<CreateBeneficialOwnerRequest>($"/customers/{customerId}/beneficial-owners", createBeneficialOwnerRequest);
+
+        public Task<BeneficialOwnershipResponse> CertifyBeneficialOwnershipAsync(Guid customerId)
+            => PostAsync<CertifyBeneficialOwnershipRequest, BeneficialOwnershipResponse>($"/customers/{customerId}/beneficial-ownership",
+                new CertifyBeneficialOwnershipRequest { Status = "certified" });
+
+        public Task<BeneficialOwnershipResponse> GetBeneficialOwnershipAsync(Guid customerId)
+            => throw new NotImplementedException();
+
+        public Task<GetBeneficialOwnersResponse> GetBeneficialOwnersAsync(Guid customerId)
+            => throw new NotImplementedException();
+
+        public Task<BeneficialOwnerResponse> GetBeneficialOwnerAsync(Guid beneficialOwnerId)
+            => throw new NotImplementedException();
+
+        public Task<BeneficialOwnerResponse> DeleteBeneficialOwnerAsync(Guid beneficialOwnerId)
+            => throw new NotImplementedException();
+
+        public Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId)
+            => throw new NotImplementedException();
+
+        public Task<IavTokenResponse> GetCustomerIavTokenAsync(Guid customerId) =>
+            throw new NotImplementedException();
+
+        #endregion
 
         public Task<DocumentResponse> GetDocumentAsync(Guid documentId)
             => GetAsync<DocumentResponse>($"/documents/{documentId}");
+
+        #region Funding Sources
 
         public Task<FundingSource> GetFundingSourceAsync(Guid fundingSourceId)
             => GetAsync<FundingSource>($"/funding-sources/{fundingSourceId}");
@@ -180,16 +275,67 @@ namespace Dwolla.Client
         public Task<BalanceResponse> GetFundingSourceBalanceAsync(Guid fundingSourceId)
             => GetAsync<BalanceResponse>($"/funding-sources/{fundingSourceId}/balance");
 
+        public Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId)
+            => throw new NotImplementedException();
+
+        public Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2)
+            => throw new NotImplementedException();
+
+        #endregion
+
         public Task<TransferResponse> GetTransferAsync(Guid transferId)
             => GetAsync<TransferResponse>($"/transfers/{transferId}");
 
-        public Task<Customer> UpdateCustomerAsync(Guid customerId, UpdateCustomerRequest customerRequest)
-            => PostAsync<UpdateCustomerRequest, Customer>($"/customers/{customerId}", customerRequest);
+        public Task<TransferFailureResponse> GetTransferFailureAsync(Guid transferId)
+            => throw new NotImplementedException();
 
-        public Task<BeneficialOwnerResponse> CreateBeneficialOwnerAsync(Guid customerId, CreateBeneficialOwnerRequest createBeneficialOwnerRequest)
-            => PostAsync<CreateBeneficialOwnerRequest, BeneficialOwnerResponse>($"/customers/{customerId}/beneficial-owners", createBeneficialOwnerRequest);
+        public Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId,
+            decimal amount, decimal? fee, Uri chargeTo, string sourceAddenda, string destinationAddenda)
+            => PostAsync($"/transfers",
+                new CreateTransferRequest
+                {
+                    Amount = new Money
+                    {
+                        Currency = "USD",
+                        Value = amount
+                    },
+                    Links = new Dictionary<string, Link>
+                    {
+                        {"source", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{sourceFundingSourceId}") }},
+                        {"destination", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{destinationFundingSourceId}") }}
+                    },
+                    Fees = fee == null || fee == 0m
+                        ? null
+                        : new List<Fee>
+                        {
+                            new Fee
+                            {
+                                Amount = new Money {Value = fee.Value, Currency = "USD"},
+                                Links = new Dictionary<string, Link> {{"charge-to", new Link {Href = chargeTo}}}
+                            }
+                        },
+                    AchDetails = sourceAddenda == null || destinationAddenda == null
+                        ? null
+                        : new AchDetails
+                        {
+                            Source = new SourceAddenda
+                            {
+                                Addenda = new Addenda
+                                {
+                                    Values = new List<string> { sourceAddenda }
+                                }
+                            },
+                            Destination = new DestinationAddenda
+                            {
+                                Addenda = new Addenda
+                                {
+                                    Values = new List<string> { destinationAddenda }
+                                }
+                            }
+                        }
+                });
 
-        public Task<BeneficialOwnershipResponse> CertifyBeneficialOwnershipAsync(Guid customerId, CertifyBeneficialOwnershipRequest certifyBeneficialOwnershipRequest)
-            => PostAsync<CertifyBeneficialOwnershipRequest, BeneficialOwnershipResponse>($"/customers/{customerId}/beneficial-ownership", certifyBeneficialOwnershipRequest);
+        public Task<RootResponse> GetRootAsync()
+            => GetAsync<RootResponse>(null);
     }
 }

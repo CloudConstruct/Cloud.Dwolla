@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Dwolla.Client;
 
 namespace ExampleApp.Tasks
 {
     internal abstract class BaseTask
     {
-        public DwollaBroker Broker { get; set; }
+        public IDwollaService Service { get; set; }
 
         public abstract Task Run();
 
         protected static void WriteLine(string value) => Console.WriteLine(value);
         protected static void Write(string value) => Console.Write(value);
         protected static string ReadLine() => Console.ReadLine();
+        protected static Guid ReadLineAsGuid() => Guid.Parse(Console.ReadLine());
 
         private static readonly Random Random = new Random();
 

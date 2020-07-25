@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
 using Dwolla.Client.Rest;
 using Moq;
+using Moq.Protected;
 using Newtonsoft.Json;
 using Xunit;
 using File = Dwolla.Client.Models.File;
@@ -27,13 +31,13 @@ namespace Dwolla.Client.Tests
         private static readonly TestRequest Request = new TestRequest { Message = "requestTest" };
         private static readonly TestResponse Response = new TestResponse { Message = "responseTest" };
 
-        private readonly Mock<IRestClient> _restClient;
+        private readonly Mock<HttpMessageHandler> messageHandler;
         private readonly DwollaClient _client;
 
         public DwollaClientShould()
         {
-            _restClient = new Mock<IRestClient>();
-            _client = new DwollaClient(_restClient.Object, true);
+            messageHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            _client = new DwollaClient(new HttpClient(messageHandler.Object));
         }
 
         [Fact]
@@ -49,12 +53,18 @@ namespace Dwolla.Client.Tests
             var response = CreateRestResponse(HttpMethod.Post, Response);
             var req = new AppTokenRequest { Key = "key", Secret = "secret" };
             var request = CreateAuthHttpRequest(req);
-            _restClient.Setup(x => x.SendAsync<TestResponse>(It.IsAny<HttpRequestMessage>()))
-                .Callback<HttpRequestMessage>(y => AppTokenCallback(request, y)).ReturnsAsync(response);
+            messageHandler.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((y, _) => AppTokenCallback(request, y))
+                .ReturnsAsync(response.Response)
+                .Verifiable();
 
             var actual = await _client.PostAuthAsync<TestResponse>(AuthRequestUri, req);
 
-            Assert.Equal(response, actual);
+            Assert.Equal(response.Response, actual.Response);
         }
 
         [Fact]
@@ -65,7 +75,7 @@ namespace Dwolla.Client.Tests
 
             var actual = await _client.GetAsync<TestResponse>(RequestUri, Headers);
 
-            Assert.Equal(response, actual);
+            Assert.Equal(response.Response, actual.Response);
         }
 
         [Fact]
@@ -76,7 +86,7 @@ namespace Dwolla.Client.Tests
 
             var actual = await _client.PostAsync<TestRequest, TestResponse>(RequestUri, Request, Headers);
 
-            Assert.Equal(response, actual);
+            Assert.Equal(response.Response, actual.Response);
         }
 
         [Fact]
@@ -88,18 +98,18 @@ namespace Dwolla.Client.Tests
 
             var actual = await _client.UploadAsync(RequestUri, request, Headers);
 
-            Assert.Equal(response, actual);
+            Assert.Equal(response.Response, actual.Response);
         }
 
         [Fact]
         public async void CreateDeleteRequestAndPassToClient()
         {
             var response = CreateRestResponse<EmptyResponse>(HttpMethod.Delete);
-            SetupForDelete(CreateDeleteRequest(Request), response);
+            SetupForDelete(CreateDeleteRequest(), response);
 
-            var actual = await _client.DeleteAsync(RequestUri, Request, Headers);
+            var actual = await _client.DeleteAsync<EmptyResponse>(RequestUri, Headers);
 
-            Assert.Equal(response, actual);
+            Assert.Equal(response.Response, actual.Response);
         }
 
         private static HttpRequestMessage CreatePostRequest() => CreateContentRequest(HttpMethod.Post, Request);
@@ -111,7 +121,7 @@ namespace Dwolla.Client.Tests
             {
                 ContentType = "image/png",
                 Filename = "test.png",
-                Stream = new Mock<Stream>().Object
+                Stream = Mock.Of<Stream>()
             }
         };
 
@@ -126,8 +136,8 @@ namespace Dwolla.Client.Tests
             return r;
         }
 
-        private static HttpRequestMessage CreateDeleteRequest(TestRequest content) =>
-            CreateContentRequest(HttpMethod.Delete, content);
+        private static HttpRequestMessage CreateDeleteRequest() =>
+            CreateRequest(HttpMethod.Delete);
 
         private static HttpRequestMessage CreateContentRequest(HttpMethod method, TestRequest content)
         {
@@ -154,7 +164,7 @@ namespace Dwolla.Client.Tests
                 RequestMessage = new HttpRequestMessage { RequestUri = new Uri(RequestUri), Method = method }
             };
             r.Headers.Add("x-request-id", RequestId);
-            return new RestResponse<T>(r, content, rawContent);
+            return new RestResponse<T>(r, content ?? Activator.CreateInstance<T>(), rawContent);
         }
 
         private static HttpRequestMessage CreateAuthHttpRequest(AppTokenRequest req) =>
@@ -166,21 +176,28 @@ namespace Dwolla.Client.Tests
                 })
             };
 
-        private void SetupForGet(HttpRequestMessage req, RestResponse<TestResponse> res) =>
-            _restClient.Setup(x => x.SendAsync<TestResponse>(It.IsAny<HttpRequestMessage>()))
-                .Callback<HttpRequestMessage>(y => GetCallback(req, y)).ReturnsAsync(res);
+        private void SetupForSend(HttpRequestMessage expected, HttpResponseMessage response,
+            Action<HttpRequestMessage, HttpRequestMessage> callback) =>
+            messageHandler.Protected()
+               .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((y, _) => callback(expected, y))
+                .ReturnsAsync(response)
+                .Verifiable();
 
-        private void SetupForPost<T>(HttpRequestMessage req, RestResponse<T> res) =>
-            _restClient.Setup(x => x.SendAsync<T>(It.IsAny<HttpRequestMessage>()))
-                .Callback<HttpRequestMessage>(y => PostCallback(req, y)).ReturnsAsync(res);
+        private void SetupForGet(HttpRequestMessage expected, RestResponse<TestResponse> response) =>
+            SetupForSend(expected, response.Response, GetCallback);
 
-        private void SetupForUpload(HttpRequestMessage r, RestResponse<EmptyResponse> response) =>
-            _restClient.Setup(x => x.SendAsync<EmptyResponse>(It.IsAny<HttpRequestMessage>()))
-                .Callback<HttpRequestMessage>(y => UploadCallback(r, y)).ReturnsAsync(response);
+        private void SetupForPost<T>(HttpRequestMessage expected, RestResponse<T> response) =>
+            SetupForSend(expected, response.Response, PostCallback);
 
-        private void SetupForDelete(HttpRequestMessage req, RestResponse<EmptyResponse> res) =>
-            _restClient.Setup(x => x.SendAsync<EmptyResponse>(It.IsAny<HttpRequestMessage>()))
-                .Callback<HttpRequestMessage>(y => DeleteCallback(req, y)).ReturnsAsync(res);
+        private void SetupForUpload(HttpRequestMessage expected, RestResponse<EmptyResponse> response) =>
+            SetupForSend(expected, response.Response, UploadCallback);
+
+        private void SetupForDelete(HttpRequestMessage expected, RestResponse<EmptyResponse> response) =>
+            SetupForSend(expected, response.Response, DeleteCallback);
 
         private static async void PostCallback(HttpRequestMessage expected, HttpRequestMessage actual)
         {
@@ -250,5 +267,6 @@ namespace Dwolla.Client.Tests
             // ReSharper disable once UnusedAutoPropertyAccessor.Local
             public string Message { get; set; }
         }
+
     }
 }

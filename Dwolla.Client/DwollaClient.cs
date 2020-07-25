@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -17,20 +18,10 @@ using Newtonsoft.Json.Serialization;
 
 namespace Dwolla.Client
 {
-    interface IDwollaClient
-    {
-        Task<RestResponse<TRes>> PostAuthAsync<TRes>(string uri, AppTokenRequest content) where TRes : IDwollaResponse;
-        Task<RestResponse<TRes>> GetAsync<TRes>(string uri, Headers headers) where TRes : IDwollaResponse;
-        Task<RestResponse<TRes>> PostAsync<TReq, TRes>(string uri, TReq content, Headers headers) where TRes : IDwollaResponse;
-        Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(string uri, TReq content, Headers headers);
-        Task<RestResponse<EmptyResponse>> UploadAsync(string uri, UploadDocumentRequest content, Headers headers);
-    }
 
-    internal class DwollaClient : IDwollaClient
+    internal class DwollaClient
     {
-        public const string ContentType = "application/vnd.dwolla.v1.hal+json";
-        public string ApiBaseAddress { get; }
-        public string AuthBaseAddress { get; }
+        public Uri BaseAddress => _client.BaseAddress;
 
         private static readonly JsonSerializerSettings JsonSettings =
             new JsonSerializerSettings
@@ -39,15 +30,13 @@ namespace Dwolla.Client
                 NullValueHandling = NullValueHandling.Ignore
             };
 
-        private readonly IRestClient _client;
+        private readonly RestClient _client;
 
-        public DwollaClient(HttpClient httpClient)
+        public DwollaClient(HttpClient httpClient) : this(new RestClient(CreateOrUpdateHttpClient(httpClient))) { }
+        internal DwollaClient(RestClient client)
         {
-            _client = new RestClient(CreateOrUpdateHttpClient(httpClient));
+            _client = client;
         }
-
-        public static DwollaClient Create(bool isSandbox) =>
-            new DwollaClient(new RestClient(CreateOrUpdateHttpClient()), isSandbox);
 
         public async Task<RestResponse<TRes>> PostAuthAsync<TRes>(
             string uri, AppTokenRequest content) where TRes : IDwollaResponse
@@ -79,25 +68,25 @@ namespace Dwolla.Client
             string uri, UploadDocumentRequest content, Headers headers) =>
             await SendAsync<EmptyResponse>(CreateUploadRequest(uri, content, headers));
 
-        public async Task<RestResponse<EmptyResponse>> DeleteAsync<TReq>(string uri, TReq content, Headers headers) =>
-            await SendAsync<EmptyResponse>(CreateDeleteRequest(uri, content, headers));
+        public async Task<RestResponse<TRes>> DeleteAsync<TRes>(string uri, Headers headers) =>
+            await SendAsync<TRes>(CreateDeleteRequest(uri, headers));
 
         private async Task<RestResponse<TRes>> SendAsync<TRes>(HttpRequestMessage request) =>
             await _client.SendAsync<TRes>(request);
 
-        private static HttpRequestMessage CreateDeleteRequest<TReq>(
-            string requestUri, TReq content, Headers headers, string contentType = ContentType) =>
-            CreateContentRequest(HttpMethod.Delete, requestUri, headers, content, contentType);
+        private static HttpRequestMessage CreateDeleteRequest(
+            string requestUri, Headers headers) =>
+            CreateRequest(HttpMethod.Delete, requestUri, headers);
 
         private static HttpRequestMessage CreatePostRequest<TReq>(
-            string requestUri, TReq content, Headers headers, string contentType = ContentType) =>
-            CreateContentRequest(HttpMethod.Post, requestUri, headers, content, contentType);
+            string requestUri, TReq content, Headers headers) =>
+            CreateContentRequest(HttpMethod.Post, requestUri, headers, content);
 
         private static HttpRequestMessage CreateContentRequest<TReq>(
-            HttpMethod method, string requestUri, Headers headers, TReq content, string contentType)
+            HttpMethod method, string requestUri, Headers headers, TReq content)
         {
             var r = CreateRequest(method, requestUri, headers);
-            r.Content = new StringContent(JsonConvert.SerializeObject(content, JsonSettings), Encoding.UTF8, contentType);
+            r.Content = new StringContent(JsonConvert.SerializeObject(content, JsonSettings), Encoding.UTF8, Constants.ContentType);
             return r;
         }
 
@@ -128,16 +117,8 @@ namespace Dwolla.Client
         private static HttpRequestMessage CreateRequest(HttpMethod method, string requestUri, Headers headers)
         {
             var r = new HttpRequestMessage(method, requestUri);
-            r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ContentType));
             foreach (var header in headers) r.Headers.Add(header.Key, header.Value);
             return r;
-        }
-
-        internal DwollaClient(IRestClient client, bool isSandbox)
-        {
-            _client = client;
-            //ApiBaseAddress = isSandbox ? "https://api-sandbox.dwolla.com" : "https://api.dwolla.com";
-            //AuthBaseAddress = isSandbox ? "https://accounts-sandbox.dwolla.com" : "https://accounts.dwolla.com";
         }
 
         private static readonly string ClientVersion = typeof(DwollaClient).GetTypeInfo().Assembly

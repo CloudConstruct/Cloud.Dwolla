@@ -19,6 +19,11 @@ namespace Dwolla.Client.Rest
 
         public async Task<RestResponse<T>> Build<T>(HttpResponseMessage response)
         {
+            if (typeof(T) == typeof(EmptyResponse))
+            {
+                return new RestResponse<T>(response, Activator.CreateInstance<T>(), null);
+            }
+
             using (var content = response.Content)
             {
                 if (content == null) return Error<T>(response, "NullResponse", "Response content is null", null);

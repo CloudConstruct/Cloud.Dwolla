@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Dwolla.Client.Models;
 
 namespace ExampleApp.Tasks.WebhookSubscriptions
 {
@@ -7,13 +8,14 @@ namespace ExampleApp.Tasks.WebhookSubscriptions
     {
         public override async Task Run()
         {
-            var rootRes = await Broker.GetRootAsync();
-            var createdSubscriptionUri = await Broker.CreateWebhookSubscriptionAsync(
-                rootRes.Links["webhook-subscriptions"].Href,
-                $"http://example.com/webhooks/{RandomAlphaNumericString(10)}",
-                RandomAlphaNumericString(10));
+            Write("Enter the url the webhook should output to: ");
+            var url = ReadLine();
+            Write("Enter a secret for the webhook: ");
+            var secret = ReadLine();
 
-            var subscription = await Broker.GetWebhookSubscriptionAsync(createdSubscriptionUri);
+            var createdSubscriptionUri = await Service.CreateWebhookSubscriptionAsync(url, secret);
+
+            var subscription = await Service.GetWebhookSubscriptionAsync(Link.ParseId(createdSubscriptionUri).Value);
             WriteLine($"Created Subscription {subscription.Id} with url={subscription.Url}");
         }
     }

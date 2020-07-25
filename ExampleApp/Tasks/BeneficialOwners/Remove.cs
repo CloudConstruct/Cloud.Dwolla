@@ -8,9 +8,9 @@ namespace ExampleApp.Tasks.BeneficialOwners
         public override async Task Run()
         {
             Write("Beneficial Owner ID to remove: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            await Broker.DeleteBeneficialOwnerAsync(input);
+            await Service.DeleteBeneficialOwnerAsync(input);
 
             WriteLine("Removed");
         }

@@ -11,11 +11,10 @@ namespace ExampleApp.Tasks.BeneficialOwners
         public override async Task Run()
         {
             Write("Customer ID for whom to create a beneficial owner: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var uri = await Broker.CreateBeneficialOwnerAsync(
-                new Uri($"{rootRes.Links["customers"].Href}/{input}/beneficial-owners"),
+            var uri = await Service.CreateBeneficialOwnerAsync(
+                input,
                 new CreateBeneficialOwnerRequest
                 {
                     FirstName = "Beneficial",
@@ -34,7 +33,7 @@ namespace ExampleApp.Tasks.BeneficialOwners
 
             if (uri == null) return;
 
-            var owner = await Broker.GetBeneficialOwnerAsync(uri);
+            var owner = await Service.GetBeneficialOwnerAsync(Link.ParseId(uri).Value);
             WriteLine($"Created {owner.FirstName} {owner.LastName}");
         }
     }

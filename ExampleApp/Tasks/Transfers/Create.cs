@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Dwolla.Client.Models;
 
 namespace ExampleApp.Tasks.Transfers
 {
@@ -9,9 +10,9 @@ namespace ExampleApp.Tasks.Transfers
         public override async Task Run()
         {
             Write("Funding Source ID from which to transfer: ");
-            var sourceFundingSource = ReadLine();
+            var sourceFundingSource = ReadLineAsGuid();
             Write("Funding Source ID to which to transfer: ");
-            var destinationFundingSource = ReadLine();
+            var destinationFundingSource = ReadLineAsGuid();
 
             Write("Include a fee? (y/n): ");
             var includeFee = ReadLine();
@@ -29,23 +30,23 @@ namespace ExampleApp.Tasks.Transfers
 
                 Write("Enter ACH details for Destination bank account: ");
                 destinationAddenda = ReadLine();
-            } 
+            }
 
             Uri uri;
             if ("y".Equals(includeFee, StringComparison.CurrentCultureIgnoreCase))
             {
-                var fundingSource = await Broker.GetFundingSourceAsync(destinationFundingSource);
-                uri = await Broker.CreateTransferAsync(sourceFundingSource, destinationFundingSource, 50, 1,
+                var fundingSource = await Service.GetFundingSourceAsync(destinationFundingSource);
+                uri = await Service.CreateTransferAsync(sourceFundingSource, destinationFundingSource, 50, 1,
                     fundingSource.Links["customer"].Href, sourceAddenda, destinationAddenda);
             }
             else
             {
-                uri = await Broker.CreateTransferAsync(sourceFundingSource, destinationFundingSource, 50, null, null, sourceAddenda, destinationAddenda);
+                uri = await Service.CreateTransferAsync(sourceFundingSource, destinationFundingSource, 50, null, null, sourceAddenda, destinationAddenda);
             }
 
             if (uri == null) return;
 
-            var transfer = await Broker.GetTransferAsync(uri);
+            var transfer = await Service.GetTransferAsync(Link.ParseId(uri).Value);
             WriteLine($"Created {transfer.Id}; Status: {transfer.Status}");
         }
     }

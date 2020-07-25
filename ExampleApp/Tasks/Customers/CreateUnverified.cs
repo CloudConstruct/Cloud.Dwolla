@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Dwolla.Client.Models;
 
 namespace ExampleApp.Tasks.Customers
 {
@@ -7,14 +8,17 @@ namespace ExampleApp.Tasks.Customers
     {
         public override async Task Run()
         {
-            var rootRes = await Broker.GetRootAsync();
-            var uri = await Broker.CreateCustomerAsync(
-                rootRes.Links["customers"].Href, "night", $"man-{RandomAlphaNumericString(5)}",
-                $"{RandomAlphaNumericString(20)}@example.com");
+            var uri = await Service.CreateCustomerAsync(
+                new Dwolla.Client.Models.Requests.CreateCustomerRequest
+                {
+                    FirstName = "night",
+                    LastName = $"man-{RandomAlphaNumericString(5)}",
+                    Email = $"{RandomAlphaNumericString(20)}@example.com"
+                });
 
             if (uri == null) return;
 
-            var customer = await Broker.GetCustomerAsync(uri);
+            var customer = await Service.GetCustomerAsync(Link.ParseId(uri).Value);
             WriteLine($"Created {customer.FirstName} {customer.LastName} with email={customer.Email}");
         }
     }

@@ -9,10 +9,9 @@ namespace ExampleApp.Tasks.Customers
         public override async Task Run()
         {
             Write("Customer ID for whom to get an IAV token: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.GetCustomerIavTokenAsync(new Uri($"{rootRes.Links["customers"].Href}/{input}"));
+            var res = await Service.GetCustomerIavTokenAsync(input);
             WriteLine($"Token created: {res.Token}");
         }
     }

@@ -7,8 +7,7 @@ namespace ExampleApp.Tasks.Customers
     {
         public override async Task Run()
         {
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.GetCustomersAsync(rootRes.Links["customers"].Href);
+            var res = await Service.GetCustomersAsync();
             res.Embedded.Customers
                 .ForEach(c => WriteLine($" - ID:{c.Id}  {c.FirstName} {c.LastName}"));
         }

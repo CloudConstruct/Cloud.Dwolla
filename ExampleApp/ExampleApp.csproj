@@ -12,6 +12,9 @@
     <EmbeddedResource Include="test-document-upload-success.png" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Dwolla.Client\Dwolla.Client.csproj">
       <Project>{5754eeca-a324-4595-8797-47ca131e73c9}</Project>
       <Name>Dwolla.Client</Name>

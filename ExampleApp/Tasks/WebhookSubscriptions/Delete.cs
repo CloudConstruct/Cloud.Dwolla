@@ -9,11 +9,9 @@ namespace ExampleApp.Tasks.WebhookSubscriptions
         public override async Task Run()
         {
             Write("Webhook subscription ID to delete: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            await Broker.DeleteWebhookSubscriptionAsync(
-                new Uri(rootRes.Links["webhook-subscriptions"].Href + "/" + input));
+            await Service.DeleteWebhookSubscriptionAsync(input);
             WriteLine($"Deleted Subscription {input}");
         }
     }

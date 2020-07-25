@@ -7,7 +7,7 @@ namespace ExampleApp.Tasks.BusinessClassifications
     {
         public override async Task Run()
         {
-            var res = await Broker.GetBusinessClassificationsAsync();
+            var res = await Service.GetBusinessClassificationsAsync();
             res.Embedded.BusinessClassifications
                 .ForEach(bc => bc.Embedded.IndustryClassifications
                     .ForEach(ic => WriteLine($"{bc.Id}:{bc.Name} - {ic.Id}:{ic.Name}")));

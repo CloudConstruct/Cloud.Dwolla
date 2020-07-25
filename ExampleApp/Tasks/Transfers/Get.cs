@@ -8,9 +8,9 @@ namespace ExampleApp.Tasks.Transfers
         public override async Task Run()
         {
             Write("Transfer ID to retrieve: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var transfer = await Broker.GetTransferAsync(input);
+            var transfer = await Service.GetTransferAsync(input);
 
             WriteLine($"Status: {transfer.Status}; Amount: {transfer.Amount.Value} {transfer.Amount.Currency};");
         }

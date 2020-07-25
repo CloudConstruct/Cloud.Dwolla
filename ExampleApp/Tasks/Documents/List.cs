@@ -9,10 +9,9 @@ namespace ExampleApp.Tasks.Documents
         public override async Task Run()
         {
             Write("Customer ID for whom to upload a document: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.GetCustomerDocumentsAsync(new Uri($"{rootRes.Links["customers"].Href}/{input}"));
+            var res = await Service.GetCustomerDocumentsAsync(input);
             res.Embedded.Documents
                 .ForEach(d => WriteLine($" - ID:{d.Id}  {d.Type} {d.Status}"));
         }

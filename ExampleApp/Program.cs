@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Dwolla.Client;
 using ExampleApp.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using static System.Console;
 
 namespace ExampleApp
 {
     public class Program
     {
-        private static void Main()
+        private static async Task Main()
         {
             var key = Environment.GetEnvironmentVariable("DWOLLA_APP_KEY");
             var secret = Environment.GetEnvironmentVariable("DWOLLA_APP_SECRET");
@@ -23,10 +25,14 @@ namespace ExampleApp
             }
             else
             {
-                var running = true;
-                var broker = new DwollaBroker(DwollaClient.Create(true));
+                var sc = new ServiceCollection();
 
-                Task.Run(async () => await broker.SetAuthorizationHeader(key, secret)).Wait();
+                sc.AddDwollaService(new DwollaCredentials { ClientId = key, ClientSecret = secret },
+                    "https://api-sandbox.dwolla.com");
+                var serviceProvider = sc.BuildServiceProvider();
+
+                var running = true;
+                var service = serviceProvider.GetRequiredService<IDwollaService>();
 
                 WriteHelp();
 
@@ -49,7 +55,14 @@ namespace ExampleApp
                             break;
 
                         default:
-                            BeginTask(input, broker);
+                            try
+                            {
+                                await BeginTask(input, service);
+                            }
+                            catch (Exception ex)
+                            {
+                                Error.WriteLine(ex.ToString());
+                            }
                             break;
                     }
                 }
@@ -81,7 +94,7 @@ namespace ExampleApp
                 .ToList();
         }
 
-        private static void BeginTask(string command, DwollaBroker broker)
+        private static async Task BeginTask(string command, IDwollaService service)
         {
             if (!_tasks.ContainsKey(command))
             {
@@ -90,9 +103,9 @@ namespace ExampleApp
             else
             {
                 var type = _tasks[command];
-                var task = (BaseTask) type.GetConstructor(new Type[0]).Invoke(new object[0]);
-                task.Broker = broker;
-                Task.Run(async () => await task.Run()).Wait();
+                var task = (BaseTask)type.GetConstructor(Array.Empty<Type>()).Invoke(Array.Empty<object>());
+                task.Service = service;
+                await task.Run();
             }
         }
     }

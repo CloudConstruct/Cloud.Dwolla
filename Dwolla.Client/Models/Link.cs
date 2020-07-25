@@ -11,7 +11,10 @@ namespace Dwolla.Client.Models
 
         [JsonProperty(PropertyName = "resource-type")]
         public string ResourceType { get; set; }
-        public Guid? Id => Href == null || Href.Segments.Length == 0 ? (Guid?)null : Guid.Parse(Href.Segments[Href.Segments.Length - 1]);
+        public Guid? Id => ParseId(Href);
+
+        public static Guid? ParseId(Uri url)
+            => url == null || url.Segments.Length == 0 ? (Guid?)null : Guid.Parse(url.Segments[url.Segments.Length - 1]);
     }
 
     public class LinkDictionary : Dictionary<string, Link> { }

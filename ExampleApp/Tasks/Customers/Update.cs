@@ -10,11 +10,10 @@ namespace ExampleApp.Tasks.Customers
         public override async Task Run()
         {
             Write("Customer ID for whom to update: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.UpdateCustomerAsync(new Uri($"{rootRes.Links["customers"].Href}/{input}"),
-                new UpdateCustomerRequest {Status = "deactivated"});
+            var res = await Service.UpdateCustomerAsync(input,
+                new UpdateCustomerRequest { Status = UpdateCustomerStatus.Deactivated });
 
             WriteLine($"Customer updated: Status={res.Status}");
         }

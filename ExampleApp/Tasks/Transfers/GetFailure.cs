@@ -8,9 +8,9 @@ namespace ExampleApp.Tasks.Transfers
         public override async Task Run()
         {
             Write("Transfer ID to retrieve the failure: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var failure = await Broker.GetTransferFailureAsync(input);
+            var failure = await Service.GetTransferFailureAsync(input);
 
             WriteLine($"Code: {failure.Code}; Description: {failure.Description};");
         }

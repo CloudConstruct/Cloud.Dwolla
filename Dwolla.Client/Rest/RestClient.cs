@@ -1,22 +1,18 @@
 ﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dwolla.Client.Models.Responses;
 
 namespace Dwolla.Client.Rest
 {
-    public interface IRestClient
+    internal class RestClient
     {
-        Task<RestResponse<T>> SendAsync<T>(HttpRequestMessage request);
-    }
+        public Uri BaseAddress => _client.BaseAddress;
 
-    public class RestClient : IRestClient
-    {
         private readonly HttpClient _client;
         private readonly IResponseBuilder _builder;
 
-        public RestClient(HttpClient client) : this(client, new ResponseBuilder())
-        {
-        }
+        public RestClient(HttpClient client) : this(client, new ResponseBuilder()) { }
 
         public async Task<RestResponse<T>> SendAsync<T>(HttpRequestMessage request)
         {

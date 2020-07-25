@@ -8,9 +8,9 @@ namespace ExampleApp.Tasks.MicroDeposits
         public override async Task Run()
         {
             Write("Funding Source ID for which to get the micro-deposits: ");
-            var input = ReadLine();
+            var input = ReadLineAsGuid();
 
-            var res = await Broker.GetMicroDepositsAsync(input);
+            var res = await Service.GetMicroDepositsAsync(input);
             WriteLine($"Status: {res.Status}");
         }
     }

@@ -7,8 +7,7 @@ namespace ExampleApp.Tasks.WebhookSubscriptions
     {
         public override async Task Run()
         {
-            var rootRes = await Broker.GetRootAsync();
-            var res = await Broker.GetWebhookSubscriptionsAsync(rootRes.Links["webhook-subscriptions"].Href);
+            var res = await Service.GetWebhookSubscriptionsAsync();
             res.Embedded.WebhookSubscriptions
                 .ForEach(ws => WriteLine($" - {ws.Id}: {ws.Url}{(ws.Paused ? " PAUSED" : null)}"));
         }
