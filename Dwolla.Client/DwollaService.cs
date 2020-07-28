@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
@@ -23,6 +24,7 @@ namespace Dwolla.Client
         private readonly Func<IServiceProvider, DwollaToken, Task> saveToken;
 
         private DwollaToken token;
+        private readonly SemaphoreSlim singleton = new SemaphoreSlim(1, 1);
 
         public DwollaService(DwollaCredentials dwollaCredentials, Uri apiBaseUrl)
         {
@@ -54,6 +56,7 @@ namespace Dwolla.Client
 
         private async Task<string> GetTokenAsync(bool force = false)
         {
+            await singleton.WaitAsync();
             if (token == null && fetchToken != null)
             {
                 token = await fetchToken(serviceProvider);
@@ -94,6 +97,7 @@ namespace Dwolla.Client
                     await saveToken(serviceProvider, token);
                 }
             }
+            singleton.Release();
 
             return token.AccessToken;
         }
