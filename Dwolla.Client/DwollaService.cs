@@ -260,8 +260,8 @@ namespace Dwolla.Client
         public Task<BeneficialOwnerResponse> DeleteBeneficialOwnerAsync(Guid beneficialOwnerId)
             => throw new NotImplementedException();
 
-        public Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId)
-            => throw new NotImplementedException();
+        public Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId, bool includeRemoved = true)
+            => GetAsync<GetFundingSourcesResponse>($"/customers/{customerId}/funding-sources{(includeRemoved == false ? "?removed=false" : string.Empty)}");
 
         public Task<IavTokenResponse> GetCustomerIavTokenAsync(Guid customerId) =>
             throw new NotImplementedException();

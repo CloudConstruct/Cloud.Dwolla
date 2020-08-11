@@ -32,7 +32,7 @@ namespace Dwolla.Client
         Task<GetBeneficialOwnersResponse> GetBeneficialOwnersAsync(Guid customerId);
         Task<BeneficialOwnerResponse> GetBeneficialOwnerAsync(Guid beneficialOwnerId);
         Task<BeneficialOwnerResponse> DeleteBeneficialOwnerAsync(Guid beneficialOwnerId);
-        Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId);
+        Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId, bool includeRemoved = true);
         Task<IavTokenResponse> GetCustomerIavTokenAsync(Guid customerId);
         Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId);
         Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2);
