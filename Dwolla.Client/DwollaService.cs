@@ -48,8 +48,8 @@ namespace Dwolla.Client
             this.dwollaClient = dwollaClient;
             this.fetchToken = fetchToken;
             this.saveToken = saveToken;
-            clientId = dwollaCredentials.ClientId;
-            clientSecret = dwollaCredentials.ClientSecret;
+            clientId = dwollaCredentials?.ClientId;
+            clientSecret = dwollaCredentials?.ClientSecret;
         }
 
         #region Private

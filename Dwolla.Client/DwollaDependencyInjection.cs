@@ -28,13 +28,13 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddDwollaService(
             this IServiceCollection services,
-            Func<IServiceProvider, Task<DwollaCredentials>> fetchCredentials,
+            Func<IServiceProvider, DwollaCredentials> fetchCredentials,
             Func<IServiceProvider, string> dwollaApiUrl,
             Func<IServiceProvider, Task<DwollaToken>> fetchToken,
             Func<IServiceProvider, DwollaToken, Task> saveToken)
         {
             services
-                .AddSingleton((sp) => fetchCredentials(sp).Result)
+                .AddSingleton((sp) => fetchCredentials(sp))
                 .AddScoped<IDwollaService>(
                     (sp) => new DwollaService(
                         sp.GetRequiredService<DwollaClient>(),
