@@ -14,7 +14,7 @@ namespace Dwolla.Client.Models
         public Guid? Id => ParseId(Href);
 
         public static Guid? ParseId(Uri url)
-            => url == null || url.Segments.Length == 0 ? (Guid?)null : Guid.Parse(url.Segments[url.Segments.Length - 1]);
+            => url == null || url.Segments.Length == 0 ? (Guid?)null : Guid.Parse(url.Segments[^1]);
     }
 
     public class LinkDictionary : Dictionary<string, Link> { }

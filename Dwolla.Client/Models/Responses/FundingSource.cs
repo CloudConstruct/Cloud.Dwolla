@@ -5,7 +5,7 @@ namespace Dwolla.Client.Models.Responses
 {
     public class FundingSource : BaseResponse
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public FundingSourceStatus Status { get; set; }
         public string Type { get; set; }
         public string BankAccountType { get; set; }

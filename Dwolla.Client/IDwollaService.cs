@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Dwolla.Client.Models;
 using Dwolla.Client.Models.Requests;
 using Dwolla.Client.Models.Responses;
 
@@ -37,6 +39,12 @@ namespace Dwolla.Client
         Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId);
         Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2);
         Task<TransferFailureResponse> GetTransferFailureAsync(Guid transferId);
-        Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId, decimal amount, decimal? fee, Uri chargeTo, string sourceAddenda, string destinationAddenda);
+        Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId, decimal amount,
+            decimal? fee, Guid? chargeToCustomer, string sourceAddenda, string destinationAddenda,
+            string correlationId);
+        Task<TransferResponse> CancelTransferAsync(Guid transferId);
+        Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId);
+        Task<Uri> CreateFundingSourceAsync(Guid customerId, string routingNumber, string accountNumber, BankAccountType bankAccountType, string name, string plaidToken = null, IEnumerable<string> channels = null, Guid? onDemandAuthorization = null);
+        Task<Uri> CreateFundingSourceAsync(Guid customerId, string plaidToken, string name, Guid? onDemandAuthorization = null);
     }
 }

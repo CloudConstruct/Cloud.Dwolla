@@ -273,6 +273,44 @@ namespace Dwolla.Client
 
         #region Funding Sources
 
+        public Task<Uri> CreateFundingSourceAsync(Guid customerId, string plaidToken, string name,
+            Guid? onDemandAuthorization = null)
+            => CreateFundingSourceAsync(customerId,
+                new CreateFundingSourceRequest
+                {
+                    PlaidToken = plaidToken,
+                    Name = name
+                },
+                onDemandAuthorization);
+
+        public Task<Uri> CreateFundingSourceAsync(Guid customerId, string routingNumber, string accountNumber,
+            BankAccountType bankAccountType, string name, string plaidToken = null,
+            IEnumerable<string> channels = null, Guid? onDemandAuthorization = null)
+            => CreateFundingSourceAsync(customerId,
+                new CreateFundingSourceRequest
+                {
+                    RoutingNumber = routingNumber,
+                    AccountNumber = accountNumber,
+                    BankAccountType = bankAccountType,
+                    Name = name,
+                    Channels = channels
+                },
+                onDemandAuthorization);
+
+        private Task<Uri> CreateFundingSourceAsync(Guid customerId, CreateFundingSourceRequest request,
+            Guid? onDemandAuthorization)
+        {
+            if (onDemandAuthorization.HasValue)
+            {
+                request.Links["on-demand-authorization"] = new Link
+                {
+                    Href = new Uri($"{dwollaClient.BaseAddress}/on-demand-authorizations/{onDemandAuthorization.Value}")
+                };
+            }
+
+            return PostAsync($"/customers/{customerId}/funding-sources", request);
+        }
+
         public Task<FundingSource> GetFundingSourceAsync(Guid fundingSourceId)
             => GetAsync<FundingSource>($"/funding-sources/{fundingSourceId}");
 
@@ -285,6 +323,9 @@ namespace Dwolla.Client
         public Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2)
             => throw new NotImplementedException();
 
+        public Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId)
+            => PostAsync<RemoveFundingSourceRequest, FundingSource>($"/funding-sources/{fundingSourceId}", new RemoveFundingSourceRequest());
+
         #endregion
 
         public Task<TransferResponse> GetTransferAsync(Guid transferId)
@@ -294,10 +335,12 @@ namespace Dwolla.Client
             => throw new NotImplementedException();
 
         public Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId,
-            decimal amount, decimal? fee, Uri chargeTo, string sourceAddenda, string destinationAddenda)
+            decimal amount, decimal? fee = null, Guid? chargeTo = null, string sourceAddenda = null,
+            string destinationAddenda = null, string correlationId = null)
             => PostAsync($"/transfers",
                 new CreateTransferRequest
                 {
+                    CorrelationId = correlationId,
                     Amount = new Money
                     {
                         Currency = "USD",
@@ -305,8 +348,8 @@ namespace Dwolla.Client
                     },
                     Links = new Dictionary<string, Link>
                     {
-                        {"source", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{sourceFundingSourceId}") }},
-                        {"destination", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{destinationFundingSourceId}") }}
+                        { "source", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{sourceFundingSourceId}") } },
+                        { "destination", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{destinationFundingSourceId}") } }
                     },
                     Fees = fee == null || fee == 0m
                         ? null
@@ -315,10 +358,15 @@ namespace Dwolla.Client
                             new Fee
                             {
                                 Amount = new Money {Value = fee.Value, Currency = "USD"},
-                                Links = new Dictionary<string, Link> {{"charge-to", new Link {Href = chargeTo}}}
+                                Links = new Dictionary<string, Link> {
+                                    {
+                                        "charge-to",
+                                        new Link { Href = new Uri($"{dwollaClient.BaseAddress}/customers/{chargeTo}") }
+                                    }
+                                }
                             }
                         },
-                    AchDetails = sourceAddenda == null || destinationAddenda == null
+                    AchDetails = sourceAddenda == null && destinationAddenda == null
                         ? null
                         : new AchDetails
                         {
@@ -338,6 +386,9 @@ namespace Dwolla.Client
                             }
                         }
                 });
+
+        public Task<TransferResponse> CancelTransferAsync(Guid transferId)
+            => PostAsync<TransferCancelRequest, TransferResponse>($"/transfers/{transferId}", new TransferCancelRequest());
 
         public Task<RootResponse> GetRootAsync()
             => GetAsync<RootResponse>(null);

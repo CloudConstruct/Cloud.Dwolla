@@ -7,6 +7,6 @@ namespace Dwolla.Client.Models.Responses
         public string Id { get; set; }
         public DateTime Created { get; set; }
         public string Topic { get; set; }
-        public string ResourceId { get; set; }
+        public Guid ResourceId { get; set; }
     }
 }

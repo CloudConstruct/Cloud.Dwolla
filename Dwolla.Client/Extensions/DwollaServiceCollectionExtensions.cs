@@ -5,7 +5,7 @@ using Dwolla.Client;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
-    public static class DwollaDependencyInjection
+    public static class DwollaServiceCollectionExtensions
     {
         public static IServiceCollection AddDwollaService(
             this IServiceCollection services,
