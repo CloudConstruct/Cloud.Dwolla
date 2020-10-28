@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 
 namespace Dwolla.Client.Models.Requests
 {
@@ -13,6 +14,7 @@ namespace Dwolla.Client.Models.Requests
         public string Address1 { get; set; }
         public string Address2 { get; set; }
         public string City { get; set; }
+        [JsonConverter(typeof(WriteAsUppercaseJsonConverter))]
         public string State { get; set; }
         public string PostalCode { get; set; }
         public DateTime? DateOfBirth { get; set; }
@@ -24,5 +26,6 @@ namespace Dwolla.Client.Models.Requests
         public string Ein { get; set; }
         public string DoingBusinessAs { get; set; }
         public string Website { get; set; }
+        public Controller Controller { get; set; }
     }
 }
