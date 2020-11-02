@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Dwolla.Client.Models.Responses;
 
 namespace Dwolla.Client.Rest
 {

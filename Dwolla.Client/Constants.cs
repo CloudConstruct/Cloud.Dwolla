@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Dwolla.Client
+﻿namespace Dwolla.Client
 {
     static class Constants
     {
