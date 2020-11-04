@@ -26,11 +26,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddDwollaService(
-            this IServiceCollection services,
-            Func<IServiceProvider, DwollaCredentials> fetchCredentials,
-            Func<IServiceProvider, string> dwollaApiUrl,
-            Func<IServiceProvider, Task<DwollaToken>> fetchToken,
+        public static IServiceCollection AddDwollaService(this IServiceCollection services, Uri dwollaApiUrl,
+            Func<IServiceProvider, DwollaCredentials> fetchCredentials, Func<IServiceProvider, Task<DwollaToken>> fetchToken,
             Func<IServiceProvider, DwollaToken, Task> saveToken)
         {
             services
@@ -44,7 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection
                         saveToken))
                 .AddHttpClient<DwollaClient>((sp, client) =>
                 {
-                    client.BaseAddress = new Uri(dwollaApiUrl(sp));
+                    client.BaseAddress = dwollaApiUrl;
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.ContentType));
                 });
 
