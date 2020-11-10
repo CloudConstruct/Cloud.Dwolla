@@ -336,7 +336,7 @@ namespace Dwolla.Client
 
         public Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId,
             decimal amount, decimal? fee = null, Guid? chargeTo = null, string sourceAddenda = null,
-            string destinationAddenda = null, string correlationId = null)
+            string destinationAddenda = null, string correlationId = null, Clearing clearing = null)
             => PostAsync($"/transfers",
                 new CreateTransferRequest
                 {
@@ -351,6 +351,7 @@ namespace Dwolla.Client
                         { "source", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{sourceFundingSourceId}") } },
                         { "destination", new Link { Href = new Uri($"{dwollaClient.BaseAddress}/funding-sources/{destinationFundingSourceId}") } }
                     },
+                    Clearing = clearing,
                     Fees = fee == null || fee == 0m
                         ? null
                         : new List<Fee>
