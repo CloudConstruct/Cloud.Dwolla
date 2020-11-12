@@ -159,6 +159,23 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
+        private async Task<Uri> PostAsync(string url, bool forceTokenRefresh = false)
+        {
+            var response = await dwollaClient.PostAsync(url, new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+
+            if (response.Error != null)
+            {
+                // Try to refresh the token once
+                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
+                {
+                    return await PostAsync(url, true);
+                }
+                throw new DwollaException(response.Error);
+            }
+
+            return response.Response.Headers.Location;
+        }
+
         private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false)
         {
             var response = await dwollaClient.UploadAsync(
@@ -317,11 +334,34 @@ namespace Dwolla.Client
         public Task<BalanceResponse> GetFundingSourceBalanceAsync(Guid fundingSourceId)
             => GetAsync<BalanceResponse>($"/funding-sources/{fundingSourceId}/balance");
 
-        public Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId)
-            => throw new NotImplementedException();
+        public Task<Uri> InitiateMicroDepositsAsync(Guid fundingSourceId)
+            => PostAsync($"/funding-sources/{fundingSourceId}/micro-deposits");
 
-        public Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2)
-            => throw new NotImplementedException();
+        public Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId)
+            => GetAsync<MicroDepositsResponse>($"/funding-sources/{fundingSourceId}/micro-deposits");
+
+        public Task<BaseResponse> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2)
+            => PostAsync<MicroDepositsRequest, BaseResponse>($"/funding-sources/{fundingSourceId}/micro-deposits",
+                new MicroDepositsRequest
+                {
+                    Amount1 = new Money
+                    {
+                        Currency = "USD",
+                        Value = amount1
+                    },
+                    Amount2 = new Money
+                    {
+                        Currency = "USD",
+                        Value = amount2
+                    },
+                });
+
+        public Task<FundingSource> UpdateFundingSourceAsync(Guid fundingSourceId, string name)
+            => PostAsync<UpdateFundingSourceRequest, FundingSource>($"/funding-sources/{fundingSourceId}", 
+                new UpdateFundingSourceRequest 
+                { 
+                    Name = name 
+                });
 
         public Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId)
             => PostAsync<RemoveFundingSourceRequest, FundingSource>($"/funding-sources/{fundingSourceId}", new RemoveFundingSourceRequest());

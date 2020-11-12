@@ -64,6 +64,9 @@ namespace Dwolla.Client
             string uri, TReq content, Headers headers) where TRes : IDwollaResponse =>
             await SendAsync<TRes>(CreatePostRequest(uri, content, headers));
 
+        public async Task<RestResponse<Uri>> PostAsync(string uri,Headers headers) 
+            => await SendAsync<Uri>(CreatePost(uri, headers));
+
         public async Task<RestResponse<EmptyResponse>> UploadAsync(
             string uri, UploadDocumentRequest content, Headers headers) =>
             await SendAsync<EmptyResponse>(CreateUploadRequest(uri, content, headers));
@@ -81,6 +84,9 @@ namespace Dwolla.Client
         private static HttpRequestMessage CreatePostRequest<TReq>(
             string requestUri, TReq content, Headers headers) =>
             CreateContentRequest(HttpMethod.Post, requestUri, headers, content);
+
+        private static HttpRequestMessage CreatePost(string requestUri, Headers headers) 
+            => CreateRequest(HttpMethod.Post, requestUri, headers);
 
         private static HttpRequestMessage CreateContentRequest<TReq>(
             HttpMethod method, string requestUri, Headers headers, TReq content)

@@ -37,7 +37,8 @@ namespace Dwolla.Client
         Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId, bool includeRemoved = true);
         Task<IavTokenResponse> GetCustomerIavTokenAsync(Guid customerId);
         Task<MicroDepositsResponse> GetMicroDepositsAsync(Guid fundingSourceId);
-        Task<Uri> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2);
+        Task<Uri> InitiateMicroDepositsAsync(Guid fundingSourceId);
+        Task<BaseResponse> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2);
         Task<TransferFailureResponse> GetTransferFailureAsync(Guid transferId);
         Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId, decimal amount,
             decimal? fee, Guid? chargeToCustomer, string sourceAddenda, string destinationAddenda,
@@ -46,5 +47,6 @@ namespace Dwolla.Client
         Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId);
         Task<Uri> CreateFundingSourceAsync(Guid customerId, string routingNumber, string accountNumber, BankAccountType bankAccountType, string name, string plaidToken = null, IEnumerable<string> channels = null, Guid? onDemandAuthorization = null);
         Task<Uri> CreateFundingSourceAsync(Guid customerId, string plaidToken, string name, Guid? onDemandAuthorization = null);
+        Task<FundingSource> UpdateFundingSourceAsync(Guid fundingSourceId, string name);
     }
 }
