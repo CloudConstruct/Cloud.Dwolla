@@ -41,8 +41,8 @@ namespace Dwolla.Client
         Task<BaseResponse> VerifyMicroDepositsAsync(Guid fundingSourceId, decimal amount1, decimal amount2);
         Task<TransferFailureResponse> GetTransferFailureAsync(Guid transferId);
         Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId, decimal amount,
-            decimal? fee, Guid? chargeToCustomer, string sourceAddenda, string destinationAddenda,
-            string correlationId, Clearing clearing = null);
+            decimal? fee = null, Guid? chargeToCustomer = null, string sourceAddenda = null, string destinationAddenda = null,
+            string correlationId = null, Clearing clearing = null);
         Task<TransferResponse> CancelTransferAsync(Guid transferId);
         Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId);
         Task<Uri> CreateFundingSourceAsync(Guid customerId, string routingNumber, string accountNumber, BankAccountType bankAccountType, string name, string plaidToken = null, IEnumerable<string> channels = null, Guid? onDemandAuthorization = null);
