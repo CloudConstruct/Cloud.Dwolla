@@ -102,7 +102,7 @@ namespace Dwolla.Client
             return token.AccessToken;
         }
 
-        private async Task<TResponse> GetAsync<TResponse>(string url, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<TResponse> GetAsync<TResponse>(string url, Headers headers = null, bool forceTokenRefresh = false)
             where TResponse : IDwollaResponse
         {
             headers ??= new Headers();
@@ -115,7 +115,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await GetAsync<TResponse>(url, true);
+                    return await GetAsync<TResponse>(url, forceTokenRefresh: true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -123,7 +123,7 @@ namespace Dwolla.Client
             return response.Content;
         }
 
-        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body, Headers headers = null, bool forceTokenRefresh = false)
             where TResponse : IDwollaResponse
         {
             headers ??= new Headers();
@@ -137,7 +137,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await PostAsync<TRequest, TResponse>(url, body, true);
+                    return await PostAsync<TRequest, TResponse>(url, body, forceTokenRefresh: true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -145,7 +145,7 @@ namespace Dwolla.Client
             return response.Content;
         }
 
-        private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
             headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
@@ -157,7 +157,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await PostAsync(url, body, true);
+                    return await PostAsync(url, body, forceTokenRefresh: true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -165,7 +165,7 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<Uri> PostAsync(string url, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<Uri> PostAsync(string url, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
             headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
@@ -177,7 +177,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await PostAsync(url, true, headers);
+                    return await PostAsync(url, headers, true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -185,7 +185,7 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
             headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
@@ -197,7 +197,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await UploadAsync(url, content, true);
+                    return await UploadAsync(url, content, forceTokenRefresh: true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -205,7 +205,7 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<TResponse> DeleteAsync<TResponse>(string url, bool forceTokenRefresh = false, Headers headers = null)
+        private async Task<TResponse> DeleteAsync<TResponse>(string url, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
             headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
@@ -217,7 +217,7 @@ namespace Dwolla.Client
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await DeleteAsync<TResponse>(url, true);
+                    return await DeleteAsync<TResponse>(url, forceTokenRefresh: true);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -437,7 +437,8 @@ namespace Dwolla.Client
                                 }
                             }
                         }
-                });
+                },
+                headers: new Headers { { "Idempotency-Key", idempotencyKey } });
 
         public Task<TransferResponse> CancelTransferAsync(Guid transferId)
             => PostAsync<TransferCancelRequest, TransferResponse>($"/transfers/{transferId}", new TransferCancelRequest());
