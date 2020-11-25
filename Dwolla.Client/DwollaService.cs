@@ -102,12 +102,13 @@ namespace Dwolla.Client
             return token.AccessToken;
         }
 
-        private async Task<TResponse> GetAsync<TResponse>(string url, bool forceTokenRefresh = false)
+        private async Task<TResponse> GetAsync<TResponse>(string url, bool forceTokenRefresh = false, Headers headers = null)
             where TResponse : IDwollaResponse
         {
-            var response = await dwollaClient.GetAsync<TResponse>(
-                url,
-                new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
+            var response = await dwollaClient.GetAsync<TResponse>(url, headers);
 
             if (response.Error != null)
             {
@@ -122,11 +123,14 @@ namespace Dwolla.Client
             return response.Content;
         }
 
-        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body, bool forceTokenRefresh = false)
+        private async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest body, bool forceTokenRefresh = false, Headers headers = null)
             where TResponse : IDwollaResponse
         {
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
             var response = await dwollaClient.PostAsync<TRequest, TResponse>(
-                url, body, new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+                url, body, headers);
 
             if (response.Error != null)
             {
@@ -141,10 +145,12 @@ namespace Dwolla.Client
             return response.Content;
         }
 
-        private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, bool forceTokenRefresh = false)
+        private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, bool forceTokenRefresh = false, Headers headers = null)
         {
-            var response = await dwollaClient.PostAsync<TRequest, EmptyResponse>(url, body,
-                new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
+            var response = await dwollaClient.PostAsync<TRequest, EmptyResponse>(url, body, headers);
 
             if (response.Error != null)
             {
@@ -159,16 +165,19 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<Uri> PostAsync(string url, bool forceTokenRefresh = false)
+        private async Task<Uri> PostAsync(string url, bool forceTokenRefresh = false, Headers headers = null)
         {
-            var response = await dwollaClient.PostAsync(url, new Headers { { "Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}" } });
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
+            var response = await dwollaClient.PostAsync(url, headers);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
                 if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
                 {
-                    return await PostAsync(url, true);
+                    return await PostAsync(url, true, headers);
                 }
                 throw new DwollaException(response.Error);
             }
@@ -176,12 +185,12 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false)
+        private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, bool forceTokenRefresh = false, Headers headers = null)
         {
-            var response = await dwollaClient.UploadAsync(
-                url,
-                content,
-                new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
+            var response = await dwollaClient.UploadAsync(url, content, headers);
 
             if (response.Error != null)
             {
@@ -196,10 +205,12 @@ namespace Dwolla.Client
             return response.Response.Headers.Location;
         }
 
-        private async Task<TResponse> DeleteAsync<TResponse>(string url, bool forceTokenRefresh = false)
+        private async Task<TResponse> DeleteAsync<TResponse>(string url, bool forceTokenRefresh = false, Headers headers = null)
         {
-            var response = await dwollaClient.DeleteAsync<TResponse>(url,
-                new Headers { { "Authorization", $"Bearer {await GetTokenAsync()}" } });
+            headers ??= new Headers();
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+
+            var response = await dwollaClient.DeleteAsync<TResponse>(url, headers);
 
             if (response.Error != null)
             {
@@ -357,10 +368,10 @@ namespace Dwolla.Client
                 });
 
         public Task<FundingSource> UpdateFundingSourceAsync(Guid fundingSourceId, string name)
-            => PostAsync<UpdateFundingSourceRequest, FundingSource>($"/funding-sources/{fundingSourceId}", 
-                new UpdateFundingSourceRequest 
-                { 
-                    Name = name 
+            => PostAsync<UpdateFundingSourceRequest, FundingSource>($"/funding-sources/{fundingSourceId}",
+                new UpdateFundingSourceRequest
+                {
+                    Name = name
                 });
 
         public Task<FundingSource> RemoveFundingSourceAsync(Guid fundingSourceId)
@@ -375,8 +386,8 @@ namespace Dwolla.Client
             => throw new NotImplementedException();
 
         public Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId,
-            decimal amount, decimal? fee = null, Guid? chargeTo = null, string sourceAddenda = null,
-            string destinationAddenda = null, string correlationId = null, Clearing clearing = null)
+            decimal amount, string idempotencyKey, decimal? fee = null, Guid? chargeTo = null,
+            string sourceAddenda = null, string destinationAddenda = null, string correlationId = null, Clearing clearing = null)
             => PostAsync($"/transfers",
                 new CreateTransferRequest
                 {
