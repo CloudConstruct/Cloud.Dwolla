@@ -64,7 +64,7 @@ namespace Dwolla.Client
             string uri, TReq content, Headers headers) where TRes : IDwollaResponse =>
             await SendAsync<TRes>(CreatePostRequest(uri, content, headers));
 
-        public async Task<RestResponse<Uri>> PostAsync(string uri,Headers headers) 
+        public async Task<RestResponse<Uri>> PostAsync(string uri, Headers headers)
             => await SendAsync<Uri>(CreatePost(uri, headers));
 
         public async Task<RestResponse<EmptyResponse>> UploadAsync(
@@ -85,7 +85,7 @@ namespace Dwolla.Client
             string requestUri, TReq content, Headers headers) =>
             CreateContentRequest(HttpMethod.Post, requestUri, headers, content);
 
-        private static HttpRequestMessage CreatePost(string requestUri, Headers headers) 
+        private static HttpRequestMessage CreatePost(string requestUri, Headers headers)
             => CreateRequest(HttpMethod.Post, requestUri, headers);
 
         private static HttpRequestMessage CreateContentRequest<TReq>(
@@ -132,7 +132,7 @@ namespace Dwolla.Client
 
         internal static HttpClient CreateOrUpdateHttpClient(HttpClient client = null)
         {
-            client = client ?? new HttpClient(new HttpClientHandler { SslProtocols = SslProtocols.Tls12 });
+            client ??= new HttpClient(new HttpClientHandler { SslProtocols = SslProtocols.Tls12 });
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("dwolla-v2-csharp", ClientVersion));
             return client;
         }
