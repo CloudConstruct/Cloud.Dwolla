@@ -266,6 +266,5 @@ namespace Dwolla.Client.Tests
             // ReSharper disable once UnusedAutoPropertyAccessor.Local
             public string Message { get; set; }
         }
-
     }
 }

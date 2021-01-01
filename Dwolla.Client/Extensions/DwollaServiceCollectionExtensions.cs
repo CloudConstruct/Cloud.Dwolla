@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
                     (sp) => new DwollaService(
                         sp.GetRequiredService<DwollaClient>(),
                         dwollaCredentials))
-                .AddHttpClient<DwollaClient>((sp, client) =>
+                .AddHttpClient<DwollaClient>((_, client) =>
                 {
                     client.BaseAddress = new Uri(dwollaApiUrl);
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.ContentType));
@@ -39,7 +39,7 @@ namespace Microsoft.Extensions.DependencyInjection
                         sp,
                         fetchToken,
                         saveToken))
-                .AddHttpClient<DwollaClient>((sp, client) =>
+                .AddHttpClient<DwollaClient>((_, client) =>
                 {
                     client.BaseAddress = dwollaApiUrl;
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.ContentType));

@@ -19,21 +19,19 @@ namespace Dwolla.Client.Rest
 
         public async Task<RestResponse<T>> Build<T>(HttpResponseMessage response)
         {
-            using (var content = response.Content)
-            {
-                if (content == null) return Error<T>(response, "NullResponse", "Response content is null", null);
-                var rawContent = await content.ReadAsStringAsync();
+            using var content = response.Content;
+            if (content == null) return Error<T>(response, "NullResponse", "Response content is null", null);
+            var rawContent = await content.ReadAsStringAsync().ConfigureAwait(false);
 
-                try
-                {
-                    return ErrorRegex.IsMatch(rawContent)
-                        ? Error<T>(response, JsonConvert.DeserializeObject<ErrorResponse>(rawContent), rawContent)
-                        : new RestResponse<T>(response, JsonConvert.DeserializeObject<T>(rawContent), rawContent);
-                }
-                catch (Exception e)
-                {
-                    return Error<T>(response, "DeserializationException", e.Message, rawContent);
-                }
+            try
+            {
+                return ErrorRegex.IsMatch(rawContent)
+                    ? Error<T>(response, JsonConvert.DeserializeObject<ErrorResponse>(rawContent), rawContent)
+                    : new RestResponse<T>(response, JsonConvert.DeserializeObject<T>(rawContent), rawContent);
+            }
+            catch (Exception e)
+            {
+                return Error<T>(response, "DeserializationException", e.Message, rawContent);
             }
         }
 

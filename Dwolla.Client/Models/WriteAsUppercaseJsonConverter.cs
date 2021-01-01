@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Dwolla.Client.Models
 {
-    class WriteAsUppercaseJsonConverter : JsonConverter<string>
+    internal class WriteAsUppercaseJsonConverter : JsonConverter<string>
     {
         public override string ReadJson(JsonReader reader, Type objectType, [AllowNull] string existingValue, bool hasExistingValue, JsonSerializer serializer)
         {

@@ -1,6 +1,6 @@
 ﻿namespace Dwolla.Client.Models.Requests
 {
-    class RemoveFundingSourceRequest
+    internal class RemoveFundingSourceRequest
     {
         public bool Removed = true;
     }

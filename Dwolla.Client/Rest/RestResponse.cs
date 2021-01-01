@@ -36,6 +36,5 @@ namespace Dwolla.Client.Rest
         {
             Content = content;
         }
-
     }
 }

@@ -17,8 +17,8 @@ namespace Dwolla.Client.Rest
         {
             try
             {
-                using var response = await _client.SendAsync(request);
-                return await _builder.Build<T>(response);
+                using var response = await _client.SendAsync(request).ConfigureAwait(false);
+                return await _builder.Build<T>(response).ConfigureAwait(false);
             }
             catch (Exception e)
             {

@@ -56,10 +56,10 @@ namespace Dwolla.Client
 
         private async Task<string> GetTokenAsync(bool force = false)
         {
-            await singleton.WaitAsync();
+            await singleton.WaitAsync().ConfigureAwait(false);
             if (token == null && fetchToken != null)
             {
-                token = await fetchToken(serviceProvider);
+                token = await fetchToken(serviceProvider).ConfigureAwait(false);
             }
 
             if (force || token?.AccessToken == null || token.Expiration <= DateTimeOffset.UtcNow)
@@ -70,7 +70,7 @@ namespace Dwolla.Client
                     {
                         Key = clientId,
                         Secret = clientSecret
-                    });
+                    }).ConfigureAwait(false);
 
                 if (tokenResponse.Error != null)
                 {
@@ -79,7 +79,7 @@ namespace Dwolla.Client
 
                 DateTimeOffset responseDate = DateTimeOffset.UtcNow;
                 // Try to get response header
-                if (tokenResponse.Response.Headers.TryGetValues("Date", out IEnumerable<string> values) && values.Count() > 0)
+                if (tokenResponse.Response.Headers.TryGetValues("Date", out IEnumerable<string> values) && values.Any())
                 {
                     responseDate = DateTimeOffset.Parse(values.First());
                 }
@@ -94,7 +94,7 @@ namespace Dwolla.Client
                 // Save the token to DB if we can
                 if (saveToken != null)
                 {
-                    await saveToken(serviceProvider, token);
+                    await saveToken(serviceProvider, token).ConfigureAwait(false);
                 }
             }
             singleton.Release();
@@ -106,18 +106,16 @@ namespace Dwolla.Client
             where TResponse : IDwollaResponse
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
-            var response = await dwollaClient.GetAsync<TResponse>(url, headers);
+            var response = await dwollaClient.GetAsync<TResponse>(url, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await GetAsync<TResponse>(url, forceTokenRefresh: true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await GetAsync<TResponse>(url, forceTokenRefresh: true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Content;
@@ -127,19 +125,17 @@ namespace Dwolla.Client
             where TResponse : IDwollaResponse
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
             var response = await dwollaClient.PostAsync<TRequest, TResponse>(
-                url, body, headers);
+                url, body, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await PostAsync<TRequest, TResponse>(url, body, forceTokenRefresh: true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await PostAsync<TRequest, TResponse>(url, body, forceTokenRefresh: true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Content;
@@ -148,18 +144,16 @@ namespace Dwolla.Client
         private async Task<Uri> PostAsync<TRequest>(string url, TRequest body, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
-            var response = await dwollaClient.PostAsync<TRequest, EmptyResponse>(url, body, headers);
+            var response = await dwollaClient.PostAsync<TRequest, EmptyResponse>(url, body, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await PostAsync(url, body, forceTokenRefresh: true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await PostAsync(url, body, forceTokenRefresh: true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Response.Headers.Location;
@@ -168,18 +162,16 @@ namespace Dwolla.Client
         private async Task<Uri> PostAsync(string url, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
-            var response = await dwollaClient.PostAsync(url, headers);
+            var response = await dwollaClient.PostAsync(url, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await PostAsync(url, headers, true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await PostAsync(url, headers, true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Response.Headers.Location;
@@ -188,18 +180,16 @@ namespace Dwolla.Client
         private async Task<Uri> UploadAsync(string url, UploadDocumentRequest content, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
-            var response = await dwollaClient.UploadAsync(url, content, headers);
+            var response = await dwollaClient.UploadAsync(url, content, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await UploadAsync(url, content, forceTokenRefresh: true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await UploadAsync(url, content, forceTokenRefresh: true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Response.Headers.Location;
@@ -208,18 +198,16 @@ namespace Dwolla.Client
         private async Task<TResponse> DeleteAsync<TResponse>(string url, Headers headers = null, bool forceTokenRefresh = false)
         {
             headers ??= new Headers();
-            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh)}");
+            headers.Add("Authorization", $"Bearer {await GetTokenAsync(forceTokenRefresh).ConfigureAwait(false)}");
 
-            var response = await dwollaClient.DeleteAsync<TResponse>(url, headers);
+            var response = await dwollaClient.DeleteAsync<TResponse>(url, headers).ConfigureAwait(false);
 
             if (response.Error != null)
             {
                 // Try to refresh the token once
-                if (response.Error.Code == "ExpiredAccessToken" && forceTokenRefresh == false)
-                {
-                    return await DeleteAsync<TResponse>(url, forceTokenRefresh: true);
-                }
-                throw new DwollaException(response.Error);
+                return response.Error.Code == "ExpiredAccessToken" && !forceTokenRefresh
+                    ? await DeleteAsync<TResponse>(url, forceTokenRefresh: true).ConfigureAwait(false)
+                    : throw new DwollaException(response.Error);
             }
 
             return response.Content;
@@ -289,7 +277,7 @@ namespace Dwolla.Client
             => throw new NotImplementedException();
 
         public Task<GetFundingSourcesResponse> GetCustomerFundingSourcesAsync(Guid customerId, bool includeRemoved = true)
-            => GetAsync<GetFundingSourcesResponse>($"/customers/{customerId}/funding-sources{(includeRemoved == false ? "?removed=false" : string.Empty)}");
+            => GetAsync<GetFundingSourcesResponse>($"/customers/{customerId}/funding-sources{(!includeRemoved ? "?removed=false" : string.Empty)}");
 
         public Task<IavTokenResponse> GetCustomerIavTokenAsync(Guid customerId) =>
             throw new NotImplementedException();
@@ -388,7 +376,7 @@ namespace Dwolla.Client
         public Task<Uri> CreateTransferAsync(Guid sourceFundingSourceId, Guid destinationFundingSourceId,
             decimal amount, string idempotencyKey, decimal? fee = null, Guid? chargeTo = null,
             string sourceAddenda = null, string destinationAddenda = null, string correlationId = null, Clearing clearing = null)
-            => PostAsync($"/transfers",
+            => PostAsync("/transfers",
                 new CreateTransferRequest
                 {
                     CorrelationId = correlationId,

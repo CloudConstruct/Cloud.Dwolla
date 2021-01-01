@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Dwolla.Client.Models.Requests
 {
-    class CreateFundingSourceRequest
+    internal class CreateFundingSourceRequest
     {
         [JsonProperty(PropertyName = "_links")]
         public Dictionary<string, Link> Links { get; set; }

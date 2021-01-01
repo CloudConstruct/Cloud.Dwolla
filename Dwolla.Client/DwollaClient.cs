@@ -18,7 +18,6 @@ using Newtonsoft.Json.Serialization;
 
 namespace Dwolla.Client
 {
-
     internal class DwollaClient
     {
         public Uri BaseAddress => _client.BaseAddress;
@@ -53,29 +52,29 @@ namespace Dwolla.Client
             };
             // Not adding this accept will result in a 401. For some reason.
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            return await SendAsync<TRes>(request);
+            return await SendAsync<TRes>(request).ConfigureAwait(false);
         }
 
         public async Task<RestResponse<TRes>> GetAsync<TRes>(
             string uri, Headers headers) where TRes : IDwollaResponse =>
-            await SendAsync<TRes>(CreateRequest(HttpMethod.Get, uri, headers));
+            await SendAsync<TRes>(CreateRequest(HttpMethod.Get, uri, headers)).ConfigureAwait(false);
 
         public async Task<RestResponse<TRes>> PostAsync<TReq, TRes>(
             string uri, TReq content, Headers headers) where TRes : IDwollaResponse =>
-            await SendAsync<TRes>(CreatePostRequest(uri, content, headers));
+            await SendAsync<TRes>(CreatePostRequest(uri, content, headers)).ConfigureAwait(false);
 
         public async Task<RestResponse<Uri>> PostAsync(string uri, Headers headers)
-            => await SendAsync<Uri>(CreatePost(uri, headers));
+            => await SendAsync<Uri>(CreatePost(uri, headers)).ConfigureAwait(false);
 
         public async Task<RestResponse<EmptyResponse>> UploadAsync(
             string uri, UploadDocumentRequest content, Headers headers) =>
-            await SendAsync<EmptyResponse>(CreateUploadRequest(uri, content, headers));
+            await SendAsync<EmptyResponse>(CreateUploadRequest(uri, content, headers)).ConfigureAwait(false);
 
         public async Task<RestResponse<TRes>> DeleteAsync<TRes>(string uri, Headers headers) =>
-            await SendAsync<TRes>(CreateDeleteRequest(uri, headers));
+            await SendAsync<TRes>(CreateDeleteRequest(uri, headers)).ConfigureAwait(false);
 
         private async Task<RestResponse<TRes>> SendAsync<TRes>(HttpRequestMessage request) =>
-            await _client.SendAsync<TRes>(request);
+            await _client.SendAsync<TRes>(request).ConfigureAwait(false);
 
         private static HttpRequestMessage CreateDeleteRequest(
             string requestUri, Headers headers) =>
